@@ -159,7 +159,7 @@ class _PhrasalVerbsScreenState extends State<PhrasalVerbsScreen>
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _particleCategories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, index) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     final p = _particleCategories[index];
                     final isSelected = _selectedParticle == p;
@@ -435,11 +435,6 @@ class _PhrasalVerbsScreenState extends State<PhrasalVerbsScreen>
     final currentPv = _quizPool[_currentQuizIndex];
     final options = _quizOptions[_currentQuizIndex];
 
-    // Build sentence with masked phrasal verb
-    final regex = RegExp(
-      RegExp.escape(currentPv.verb),
-      caseSensitive: false,
-    );
     final maskedSentence = currentPv.exampleSentence.replaceAll(
       RegExp(r'\b(' + RegExp.escape(currentPv.verb) + r'(\w*))' + r'(\s+' + RegExp.escape(currentPv.particles) + r')?', caseSensitive: false),
       '[ ______ ]',
@@ -570,7 +565,7 @@ class _PhrasalVerbsScreenState extends State<PhrasalVerbsScreen>
                   child: Row(
                     children: [
                       Text(
-                        String.fromCharCode(65 + optIdx) + ')',
+                        '${String.fromCharCode(65 + optIdx)})',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

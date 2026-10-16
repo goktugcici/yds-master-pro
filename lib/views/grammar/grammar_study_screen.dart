@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/seed_grammar_topics.dart';
-import '../../models/grammar_topic.dart';
 import '../../models/question.dart';
 import '../../providers/question_provider.dart';
 import '../practice/practice_quiz_screen.dart';

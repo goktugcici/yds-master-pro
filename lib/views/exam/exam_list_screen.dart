@@ -653,7 +653,7 @@ class _ExamListScreenState extends ConsumerState<ExamListScreen> {
 
                       final pool = ref.read(questionNotifierProvider).allQuestions;
                       final customExam = ExamNotifier.createCustomExam(
-                        title: 'Özel YDS Denemesi (${selectedQuestionCount} Soru)',
+                        title: 'Özel YDS Denemesi ($selectedQuestionCount Soru)',
                         questionCount: selectedQuestionCount,
                         durationMinutes: selectedDurationMinutes,
                         categories: selectedCategories.toList(),
@@ -674,7 +674,7 @@ class _ExamListScreenState extends ConsumerState<ExamListScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
-                      '${selectedQuestionCount} Soruluk Özel Denemeyi Başlat',
+                      '$selectedQuestionCount Soruluk Özel Denemeyi Başlat',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ),

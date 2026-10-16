@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
-import '../../models/exam.dart';
 import '../../providers/exam_provider.dart';
 import 'exam_result_screen.dart';
 
@@ -486,7 +485,7 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                         child: ListView.separated(
                           physics: const BouncingScrollPhysics(),
                           itemCount: totalQ,
-                          separatorBuilder: (_, __) => const Divider(height: 12),
+                          separatorBuilder: (_, index) => const Divider(height: 12),
                           itemBuilder: (context, idx) {
                             final q = liveState.exam.questions[idx];
                             final selectedOpt = liveState.userAnswers[q.id];

@@ -461,7 +461,7 @@ class _ReadingDetailScreenState extends ConsumerState<ReadingDetailScreen>
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemCount: article.vocabulary.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final voc = article.vocabulary[index];
         final matchingWord = vocab.allWords.where(

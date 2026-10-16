@@ -216,7 +216,7 @@ class _CollocationQuizScreenState extends State<CollocationQuizScreen>
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.all(16),
                   itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final item = filtered[index];
                     return Container(
