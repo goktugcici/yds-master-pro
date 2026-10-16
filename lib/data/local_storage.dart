@@ -202,4 +202,38 @@ class LocalStorage {
     mistakes.remove(questionId);
     await _prefs.setStringList(_keyMistakeQuestions, mistakes.toList());
   }
+
+  // --- QUESTION NOTES ---
+  static const String _keyQuestionNotes = 'yds_question_notes';
+
+  Map<String, String> getAllQuestionNotes() {
+    final raw = _prefs.getString(_keyQuestionNotes);
+    if (raw == null) return {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, v as String));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  String? getQuestionNote(String questionId) {
+    return getAllQuestionNotes()[questionId];
+  }
+
+  Future<void> saveQuestionNote(String questionId, String note) async {
+    final notes = getAllQuestionNotes();
+    if (note.trim().isEmpty) {
+      notes.remove(questionId);
+    } else {
+      notes[questionId] = note.trim();
+    }
+    await _prefs.setString(_keyQuestionNotes, jsonEncode(notes));
+  }
+
+  Future<void> deleteQuestionNote(String questionId) async {
+    final notes = getAllQuestionNotes();
+    notes.remove(questionId);
+    await _prefs.setString(_keyQuestionNotes, jsonEncode(notes));
+  }
 }

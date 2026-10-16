@@ -16,6 +16,7 @@ class QuestionPracticeState {
   final Set<String> bookmarkedQuestionIds;
   final Map<String, bool> solvedQuestions; // questionId -> isCorrect
   final Set<String> mistakeQuestionIds;
+  final Map<String, String> questionNotes; // questionId -> personalNote
 
   const QuestionPracticeState({
     required this.allQuestions,
@@ -28,7 +29,11 @@ class QuestionPracticeState {
     this.bookmarkedQuestionIds = const {},
     this.solvedQuestions = const {},
     this.mistakeQuestionIds = const {},
+    this.questionNotes = const {},
   });
+
+  String? get currentQuestionNote =>
+      currentQuestion != null ? questionNotes[currentQuestion!.id] : null;
 
   List<Question> get activeQuestions {
     if (customQuestionPool != null) return customQuestionPool!;
@@ -63,6 +68,7 @@ class QuestionPracticeState {
     Set<String>? bookmarkedQuestionIds,
     Map<String, bool>? solvedQuestions,
     Set<String>? mistakeQuestionIds,
+    Map<String, String>? questionNotes,
     bool clearSelectedOption = false,
   }) {
     return QuestionPracticeState(
@@ -81,6 +87,7 @@ class QuestionPracticeState {
           bookmarkedQuestionIds ?? this.bookmarkedQuestionIds,
       solvedQuestions: solvedQuestions ?? this.solvedQuestions,
       mistakeQuestionIds: mistakeQuestionIds ?? this.mistakeQuestionIds,
+      questionNotes: questionNotes ?? this.questionNotes,
     );
   }
 }
@@ -113,9 +120,11 @@ class QuestionNotifier extends StateNotifier<QuestionPracticeState> {
     final storage = _ref.read(localStorageProvider);
     final solved = storage.getSolvedQuestions();
     final mistakes = storage.getMistakeQuestionIds();
+    final notes = storage.getAllQuestionNotes();
     state = state.copyWith(
       solvedQuestions: solved,
       mistakeQuestionIds: mistakes,
+      questionNotes: notes,
     );
   }
 
@@ -241,6 +250,25 @@ class QuestionNotifier extends StateNotifier<QuestionPracticeState> {
       bookmarks.add(questionId);
     }
     state = state.copyWith(bookmarkedQuestionIds: bookmarks);
+  }
+
+  Future<void> saveQuestionNote(String questionId, String note) async {
+    final storage = _ref.read(localStorageProvider);
+    await storage.saveQuestionNote(questionId, note);
+    final updated = Map<String, String>.from(state.questionNotes);
+    if (note.trim().isEmpty) {
+      updated.remove(questionId);
+    } else {
+      updated[questionId] = note.trim();
+    }
+    state = state.copyWith(questionNotes: updated);
+  }
+
+  Future<void> deleteQuestionNote(String questionId) async {
+    final storage = _ref.read(localStorageProvider);
+    await storage.deleteQuestionNote(questionId);
+    final updated = Map<String, String>.from(state.questionNotes)..remove(questionId);
+    state = state.copyWith(questionNotes: updated);
   }
 }
 

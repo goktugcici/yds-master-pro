@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../grammar/grammar_study_screen.dart';
+import '../notes/question_notes_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../stats/detailed_stats_screen.dart';
 
@@ -160,6 +162,68 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const DetailedStatsScreen()),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Grammar Study Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0284C7).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.menu_book_rounded, color: Color(0xFF0284C7)),
+              ),
+              title: const Text('YDS Gramer Rehberi & Notlar', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Tense, bağlaç, devrik yapı ve sınav tuzakları', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const GrammarStudyScreen()),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Question Notes Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.edit_note_rounded, color: Color(0xFF4F46E5)),
+              ),
+              title: const Text('Kişisel Soru Notlarım', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Sorulara eklediğiniz özel çalışma notları', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const QuestionNotesScreen()),
                 );
               },
             ),

@@ -48,6 +48,23 @@ class PracticeQuizScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(
+              state.questionNotes.containsKey(question.id)
+                  ? Icons.sticky_note_2
+                  : Icons.note_add_outlined,
+              color: state.questionNotes.containsKey(question.id)
+                  ? const Color(0xFFF59E0B)
+                  : null,
+            ),
+            tooltip: 'Soruya Not Ekle',
+            onPressed: () => _showNoteDialog(
+              context,
+              ref,
+              question.id,
+              state.questionNotes[question.id],
+            ),
+          ),
+          IconButton(
+            icon: Icon(
               isBookmarked ? Icons.bookmark : Icons.bookmark_border,
               color: isBookmarked ? AppColors.primaryLight : null,
             ),
@@ -266,6 +283,62 @@ class PracticeQuizScreen extends ConsumerWidget {
                       ),
                     ).animate().fade().slideY(begin: 0.1, end: 0),
 
+                    // Question Note Post-It Card
+                    if (state.questionNotes.containsKey(question.id)) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF3B2F08) : const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B).withOpacity(0.6),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.sticky_note_2, color: Color(0xFFD97706), size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Kişisel Çalışma Notunuz',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Color(0xFFD97706),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    state.questionNotes[question.id]!,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.white70 : const Color(0xFF78350F),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit, size: 16, color: Color(0xFFD97706)),
+                              onPressed: () => _showNoteDialog(
+                                context,
+                                ref,
+                                question.id,
+                                state.questionNotes[question.id],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 18),
 
                     // Next / Prev controls
@@ -312,6 +385,69 @@ class PracticeQuizScreen extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNoteDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String questionId,
+    String? existingNote,
+  ) {
+    final controller = TextEditingController(text: existingNote ?? '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.sticky_note_2, color: Color(0xFFF59E0B)),
+            SizedBox(width: 8),
+            Text('Soruya Not Ekle'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Bu soruya özel hatırlatma, bağlaç kuralı veya kelime notunu yaz:',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Örn: Although arkasından tam cümle alır, despite isim alır...',
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (existingNote != null && existingNote.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                ref.read(questionProvider.notifier).deleteQuestionNote(questionId);
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Notu Sil', style: TextStyle(color: Colors.red)),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(questionProvider.notifier).saveQuestionNote(questionId, controller.text);
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Kaydet'),
           ),
         ],
       ),

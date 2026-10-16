@@ -8,7 +8,9 @@ import '../../providers/question_provider.dart';
 import '../../providers/stats_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/vocabulary_provider.dart';
+import '../grammar/grammar_study_screen.dart';
 import '../mistakes/mistake_notebook_screen.dart';
+import '../notes/question_notes_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../reading/reading_hub_screen.dart';
 import '../stats/detailed_stats_screen.dart';
@@ -32,6 +34,10 @@ class HomeScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final daysLeft = targetDate.difference(DateTime.now()).inDays;
+    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+    final wordOfTheDay = vocab.allWords.isNotEmpty
+        ? vocab.allWords[dayOfYear % vocab.allWords.length]
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -320,7 +326,197 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
+
+            // Günün YDS Kelimesi (Word of the Day Card)
+            if (wordOfTheDay != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.cardDark : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.auto_awesome, color: Color(0xFFD97706), size: 16),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Günün YDS Kelimesi',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFD97706),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${wordOfTheDay.level} • ${wordOfTheDay.partOfSpeech}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryLight,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          wordOfTheDay.english,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (wordOfTheDay.synonyms.isNotEmpty)
+                          Expanded(
+                            child: Text(
+                              '≈ ${wordOfTheDay.synonyms.take(2).join(", ")}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      wordOfTheDay.turkish,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.04)
+                            : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '"${wordOfTheDay.exampleSentence}"',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontStyle: FontStyle.italic,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            wordOfTheDay.exampleTranslation,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            ref
+                                .read(vocabularyProvider.notifier)
+                                .markWordLearned(wordOfTheDay.id, !wordOfTheDay.isLearned);
+                          },
+                          icon: Icon(
+                            wordOfTheDay.isLearned
+                                ? Icons.check_circle
+                                : Icons.check_circle_outline,
+                            size: 16,
+                            color: wordOfTheDay.isLearned ? AppColors.success : Colors.grey,
+                          ),
+                          label: Text(
+                            wordOfTheDay.isLearned ? 'Öğrenildi' : 'Öğrendim',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: wordOfTheDay.isLearned ? AppColors.success : null,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            wordOfTheDay.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                            size: 20,
+                            color: wordOfTheDay.isFavorite ? AppColors.warning : Colors.grey,
+                          ),
+                          onPressed: () {
+                            ref.read(vocabularyProvider.notifier).toggleFavorite(wordOfTheDay.id);
+                          },
+                          tooltip: 'Favoriye Ekle',
+                        ),
+                        OutlinedButton(
+                          onPressed: () => onTabChange(1),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Kelimelere Git', style: TextStyle(fontSize: 11.5)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
 
             // Quick Modules Grid (Kelimeler, Soru Bankası, Deneme Sınavı, Hata Defteri, Taktikler)
             const Text(
@@ -440,6 +636,38 @@ class HomeScreen extends ConsumerWidget {
                     icon: Icons.timer,
                     gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                     onTap: () => onTabChange(3), // Deneme tab
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'YDS Gramer Rehberi',
+                    subtitle: 'Tense, Bağlaç & Kurallar',
+                    icon: Icons.menu_book_rounded,
+                    gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const GrammarStudyScreen()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Kişisel Soru Notlarım',
+                    subtitle: '${questionState.questionNotes.length} Soru Notu Kayıtlı',
+                    icon: Icons.edit_note_rounded,
+                    gradient: const [Color(0xFF4F46E5), Color(0xFF3730A3)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const QuestionNotesScreen()),
+                      );
+                    },
                   ),
                 ),
               ],

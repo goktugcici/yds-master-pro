@@ -24,6 +24,9 @@ import 'package:yds_pro/views/profile/profile_screen.dart';
 import 'package:yds_pro/views/stats/detailed_stats_screen.dart';
 import 'package:yds_pro/views/strategies/strategy_guide_screen.dart';
 import 'package:yds_pro/views/vocabulary/vocabulary_screen.dart';
+import 'package:yds_pro/data/seed_grammar_topics.dart';
+import 'package:yds_pro/views/grammar/grammar_study_screen.dart';
+import 'package:yds_pro/views/notes/question_notes_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -687,6 +690,157 @@ void main() {
       expect(find.text('Özel Sınav Oluştur'), findsOneWidget);
       expect(find.text('Kendi Denemeni Oluştur (Sihirbaz)'), findsOneWidget);
       expect(find.text('Branş Denemeleri'), findsOneWidget);
+    });
+  });
+
+  group('10. Grammar Study & Personal Question Notes Tests', () {
+    late LocalStorage storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = await LocalStorage.init();
+    });
+
+    test('defaultGrammarTopics contains core YDS grammar subjects and content', () {
+      expect(defaultGrammarTopics.length, greaterThanOrEqualTo(5));
+      final titles = defaultGrammarTopics.map((t) => t.title).toList();
+      expect(titles, contains('Tense Uyumu & Zaman Bağlaçları'));
+      expect(titles, contains('Bağlaçlar & Geçiş İfadeleri'));
+      expect(titles, contains('Modals & Perfect Modals'));
+      expect(titles, contains('Koşul Cümleleri & Devrik Şartlar'));
+      expect(titles, contains('Kısaltmalar (Participle Reductions)'));
+
+      for (final topic in defaultGrammarTopics) {
+        expect(topic.goldenRules.isNotEmpty, isTrue);
+        expect(topic.examTraps.isNotEmpty, isTrue);
+        expect(topic.keyFormulas.isNotEmpty, isTrue);
+        expect(topic.examples.isNotEmpty, isTrue);
+        expect(topic.category, isNotNull);
+      }
+    });
+
+    test('QuestionNotifier handles question note creation, update, and deletion', () async {
+      final container = ProviderContainer(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+      );
+
+      final notifier = container.read(questionProvider.notifier);
+      expect(container.read(questionProvider).questionNotes, isEmpty);
+
+      // Save a note
+      await notifier.saveQuestionNote('q_test_1', 'By the time + V2 kuralına dikkat et!');
+      expect(container.read(questionProvider).questionNotes['q_test_1'], equals('By the time + V2 kuralına dikkat et!'));
+      expect(storage.getQuestionNote('q_test_1'), equals('By the time + V2 kuralına dikkat et!'));
+
+      // Update the note
+      await notifier.saveQuestionNote('q_test_1', 'Güncellenmiş kural notu.');
+      expect(container.read(questionProvider).questionNotes['q_test_1'], equals('Güncellenmiş kural notu.'));
+
+      // Delete the note
+      await notifier.deleteQuestionNote('q_test_1');
+      expect(container.read(questionProvider).questionNotes.containsKey('q_test_1'), isFalse);
+      expect(storage.getQuestionNote('q_test_1'), isNull);
+    });
+
+    testWidgets('GrammarStudyScreen renders topics, rules, and search bar',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: GrammarStudyScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('YDS Gramer Rehberi & Notlar'), findsOneWidget);
+      expect(find.text('YDS Altın Gramer Kuralları'), findsOneWidget);
+      expect(find.text('Tense Uyumu & Zaman Bağlaçları'), findsOneWidget);
+      expect(find.text('Bağlaçlar & Geçiş İfadeleri'), findsOneWidget);
+
+      // Tap on a topic card to expand
+      await tester.tap(find.text('Tense Uyumu & Zaman Bağlaçları'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Altın Kurallar'), findsOneWidget);
+      expect(find.text('Kritik Sınav Formülleri'), findsOneWidget);
+      expect(find.text('ÖSYM Çeldirici Tuzakları'), findsOneWidget);
+    });
+
+    testWidgets('QuestionNotesScreen renders empty state and populated state',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      // 1. Empty state
+      await tester.pumpWidget(
+        ProviderScope(
+          key: const ValueKey('notes_empty_scope'),
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: QuestionNotesScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kişisel Soru Notlarım'), findsOneWidget);
+      expect(find.text('Henüz Bir Soruya Not Eklemediniz'), findsOneWidget);
+
+      // 2. Add note to a real seed question
+      final seedQ = defaultSeedQuestions.first;
+      await storage.saveQuestionNote(seedQ.id, 'Önemli kelime: crucial');
+
+      await tester.pumpWidget(
+        ProviderScope(
+          key: const ValueKey('notes_populated_scope'),
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: QuestionNotesScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Önemli kelime: crucial'), findsOneWidget);
+      expect(find.text('Soruyu İncele & Çöz'), findsOneWidget);
+    });
+
+    testWidgets('HomeScreen displays Word of the Day and new Study Module cards',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: MaterialApp(
+            home: HomeScreen(onTabChange: (_) {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Günün YDS Kelimesi'), findsOneWidget);
+      expect(find.text('YDS Gramer Rehberi'), findsOneWidget);
+      expect(find.text('Kişisel Soru Notlarım'), findsOneWidget);
     });
   });
 }
