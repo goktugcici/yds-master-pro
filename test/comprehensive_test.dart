@@ -13,7 +13,6 @@ import 'package:yds_pro/providers/local_storage_provider.dart';
 import 'package:yds_pro/providers/question_provider.dart';
 import 'package:yds_pro/providers/stats_provider.dart';
 import 'package:yds_pro/providers/subscription_provider.dart';
-import 'package:yds_pro/providers/theme_provider.dart';
 import 'package:yds_pro/providers/vocabulary_provider.dart';
 import 'package:yds_pro/views/home/home_screen.dart';
 import 'package:yds_pro/views/mistakes/mistake_notebook_screen.dart';
