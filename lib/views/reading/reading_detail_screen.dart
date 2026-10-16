@@ -1,21 +1,29 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/reading_article.dart';
+import '../../providers/vocabulary_provider.dart';
 
-class ReadingDetailScreen extends StatefulWidget {
+class ReadingDetailScreen extends ConsumerStatefulWidget {
   final ReadingArticle article;
 
   const ReadingDetailScreen({super.key, required this.article});
 
   @override
-  State<ReadingDetailScreen> createState() => _ReadingDetailScreenState();
+  ConsumerState<ReadingDetailScreen> createState() => _ReadingDetailScreenState();
 }
 
-class _ReadingDetailScreenState extends State<ReadingDetailScreen>
+class _ReadingDetailScreenState extends ConsumerState<ReadingDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final Map<int, int> _selectedAnswers = {};
   final Set<int> _submittedQuestions = {};
+
+  Timer? _readingTimer;
+  int _elapsedSeconds = 0;
+  bool _isTiming = false;
+  int? _calculatedWpm;
 
   @override
   void initState() {
@@ -25,8 +33,43 @@ class _ReadingDetailScreenState extends State<ReadingDetailScreen>
 
   @override
   void dispose() {
+    _readingTimer?.cancel();
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _startTimer() {
+    _readingTimer?.cancel();
+    setState(() {
+      _isTiming = true;
+      _elapsedSeconds = 0;
+      _calculatedWpm = null;
+    });
+    _readingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() => _elapsedSeconds++);
+      }
+    });
+  }
+
+  void _stopTimer() {
+    _readingTimer?.cancel();
+    final wordCount = widget.article.contentEn.trim().split(RegExp(r'\s+')).length;
+    final sec = _elapsedSeconds > 0 ? _elapsedSeconds : 1;
+    final wpm = ((wordCount / sec) * 60).round();
+    setState(() {
+      _isTiming = false;
+      _calculatedWpm = wpm;
+    });
+  }
+
+  void _resetTimer() {
+    _readingTimer?.cancel();
+    setState(() {
+      _isTiming = false;
+      _elapsedSeconds = 0;
+      _calculatedWpm = null;
+    });
   }
 
   @override
@@ -141,6 +184,11 @@ class _ReadingDetailScreenState extends State<ReadingDetailScreen>
           const Divider(),
           const SizedBox(height: 12),
 
+          // Speed Reading & WPM Timer Card
+          _buildSpeedReadingCard(context, isDark, article),
+
+          const SizedBox(height: 16),
+
           // English content
           Container(
             padding: const EdgeInsets.all(18),
@@ -219,11 +267,196 @@ class _ReadingDetailScreenState extends State<ReadingDetailScreen>
     );
   }
 
+  Widget _buildSpeedReadingCard(BuildContext context, bool isDark, ReadingArticle article) {
+    final wordCount = article.contentEn.trim().split(RegExp(r'\s+')).length;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isTiming
+              ? AppColors.primaryLight
+              : (_calculatedWpm != null
+                  ? AppColors.success
+                  : (isDark ? AppColors.borderDark : AppColors.borderLight)),
+          width: _isTiming || _calculatedWpm != null ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.speed, color: AppColors.primaryLight, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'YDS Okuma Hızı & WPM Kronometresi',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      ),
+                      Text(
+                        '$wordCount Kelime • Hedef: 180 - 220 WPM',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (_isTiming)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.red.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer, color: Colors.red, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${(_elapsedSeconds ~/ 60).toString().padLeft(2, '0')}:${(_elapsedSeconds % 60).toString().padLeft(2, '0')}',
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (!_isTiming && _calculatedWpm == null) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _startTimer,
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: const Text('Okumayı Başlat (Süre Ölç)', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ] else if (_isTiming) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _stopTimer,
+                icon: const Icon(Icons.flag, size: 18),
+                label: const Text('Metni Bitirdim • Hızımı Hesapla', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ] else if (_calculatedWpm != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getWpmColor(_calculatedWpm!).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _getWpmColor(_calculatedWpm!).withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$_calculatedWpm WPM',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: _getWpmColor(_calculatedWpm!),
+                        ),
+                      ),
+                      Text(
+                        '$_elapsedSeconds sn sürdü',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getWpmFeedback(_calculatedWpm!),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: _getWpmColor(_calculatedWpm!),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: _resetTimer,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Yeniden Ölç', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _getWpmColor(int wpm) {
+    if (wpm < 140) return AppColors.warning;
+    if (wpm < 180) return AppColors.primaryLight;
+    if (wpm <= 240) return AppColors.success;
+    return const Color(0xFF8B5CF6);
+  }
+
+  String _getWpmFeedback(int wpm) {
+    if (wpm < 140) {
+      return '⚠️ Yavaş Hız: YDS paragraf sorularında zaman baskısı yaşamamak için 180+ WPM hedeflenmelidir.';
+    } else if (wpm < 180) {
+      return '👍 Orta Düzey: YDS için kabul edilebilir. Ancak soru çözümüne daha çok süre bırakmak için hızınızı artırabilirsiniz.';
+    } else if (wpm <= 240) {
+      return '🎯 İdeal YDS Hızı: ÖSYM paragraflarını hedeflenen sürede (2.5 - 3 dk) bitirme standardındasınız!';
+    } else {
+      return '🚀 Üstün Hız: Akademik metinleri olağanüstü hızla kavrıyorsunuz. Denemelerde ciddi zaman avantajı sağlar!';
+    }
+  }
+
   Widget _buildVocabularyTab(
     BuildContext context,
     ReadingArticle article,
     bool isDark,
   ) {
+    final vocab = ref.watch(vocabularyProvider);
+
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -231,6 +464,10 @@ class _ReadingDetailScreenState extends State<ReadingDetailScreen>
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final voc = article.vocabulary[index];
+        final matchingWord = vocab.allWords.where(
+          (w) => w.english.trim().toLowerCase() == voc.english.trim().toLowerCase(),
+        ).firstOrNull;
+
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -246,12 +483,14 @@ class _ReadingDetailScreenState extends State<ReadingDetailScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    voc.english,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryLight,
+                  Expanded(
+                    child: Text(
+                      voc.english,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryLight,
+                      ),
                     ),
                   ),
                   Container(
@@ -275,6 +514,72 @@ class _ReadingDetailScreenState extends State<ReadingDetailScreen>
               Text(
                 'Tanım: ${voc.definition}',
                 style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (matchingWord != null) ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        ref.read(vocabularyProvider.notifier).markWordLearned(
+                          matchingWord.id,
+                          !matchingWord.isLearned,
+                        );
+                      },
+                      icon: Icon(
+                        matchingWord.isLearned ? Icons.check_circle : Icons.check_circle_outline,
+                        size: 16,
+                        color: matchingWord.isLearned ? AppColors.success : Colors.grey,
+                      ),
+                      label: Text(
+                        matchingWord.isLearned ? 'Öğrenildi' : 'Öğrendim Olarak İşaretle',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: matchingWord.isLearned ? AppColors.success : null,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        matchingWord.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                        size: 20,
+                        color: matchingWord.isFavorite ? AppColors.warning : Colors.grey,
+                      ),
+                      onPressed: () {
+                        ref.read(vocabularyProvider.notifier).toggleFavorite(matchingWord.id);
+                      },
+                      tooltip: 'Favoriye Ekle',
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        '📚 YDS Reading Özel Kelimesi',
+                        style: TextStyle(fontSize: 11, color: AppColors.primaryLight),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('"${voc.english}" kelimesi çalışma listenize kaydedildi.'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                      label: const Text('Listeme Ekle', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

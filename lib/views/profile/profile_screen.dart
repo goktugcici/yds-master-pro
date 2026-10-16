@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../collocations/collocation_quiz_screen.dart';
 import '../grammar/grammar_study_screen.dart';
 import '../notes/question_notes_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -224,6 +225,37 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const QuestionNotesScreen()),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Collocation & Preposition Lab Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.hub_rounded, color: Color(0xFF059669)),
+              ),
+              title: const Text('Edat & Kolokasyon Lab', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Preposition kuralları, kalıplar ve tamamlama quizi', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CollocationQuizScreen()),
                 );
               },
             ),

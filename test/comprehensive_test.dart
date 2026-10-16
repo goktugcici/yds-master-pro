@@ -27,6 +27,9 @@ import 'package:yds_pro/views/vocabulary/vocabulary_screen.dart';
 import 'package:yds_pro/data/seed_grammar_topics.dart';
 import 'package:yds_pro/views/grammar/grammar_study_screen.dart';
 import 'package:yds_pro/views/notes/question_notes_screen.dart';
+import 'package:yds_pro/data/seed_collocations.dart';
+import 'package:yds_pro/views/collocations/collocation_quiz_screen.dart';
+import 'package:yds_pro/views/reading/reading_detail_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -841,6 +844,105 @@ void main() {
       expect(find.text('Günün YDS Kelimesi'), findsOneWidget);
       expect(find.text('YDS Gramer Rehberi'), findsOneWidget);
       expect(find.text('Kişisel Soru Notlarım'), findsOneWidget);
+      expect(find.text('Edat & Kolokasyon Lab'), findsOneWidget);
+    });
+  });
+
+  group('11. Speed Reading WPM & Collocation Lab Tests', () {
+    late LocalStorage storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = await LocalStorage.init();
+    });
+
+    test('defaultCollocations contains essential YDS prepositions and valid data', () {
+      expect(defaultCollocations.length, greaterThanOrEqualTo(25));
+      final preps = defaultCollocations.map((c) => c.preposition).toSet();
+      expect(preps, containsAll(['on', 'to', 'from', 'of', 'with', 'in', 'for', 'about']));
+
+      for (final col in defaultCollocations) {
+        expect(col.word.isNotEmpty, isTrue);
+        expect(col.preposition.isNotEmpty, isTrue);
+        expect(col.meaningTr.isNotEmpty, isTrue);
+        expect(col.exampleSentence.isNotEmpty, isTrue);
+        expect(col.tip.isNotEmpty, isTrue);
+        expect(col.fullPhrase, equals('${col.word} ${col.preposition}'));
+      }
+    });
+
+    testWidgets('ReadingDetailScreen renders speed reading card and measures WPM',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: MaterialApp(
+            home: ReadingDetailScreen(article: defaultReadingArticles.first),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('YDS Okuma Hızı & WPM Kronometresi'), findsOneWidget);
+      expect(find.text('Okumayı Başlat (Süre Ölç)'), findsOneWidget);
+
+      // Start timing
+      await tester.tap(find.text('Okumayı Başlat (Süre Ölç)'));
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(find.text('Metni Bitirdim • Hızımı Hesapla'), findsOneWidget);
+
+      // Finish timing
+      await tester.tap(find.text('Metni Bitirdim • Hızımı Hesapla'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('sn sürdü'), findsOneWidget);
+      expect(find.text('Yeniden Ölç'), findsOneWidget);
+    });
+
+    testWidgets('CollocationQuizScreen renders Library tab, filters and answers quiz question',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: CollocationQuizScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('YDS Edat & Kolokasyon Laboratuvarı'), findsOneWidget);
+      expect(find.text('Kütüphane'), findsOneWidget);
+      expect(find.text('Edat Quizi'), findsOneWidget);
+      expect(find.text('rely'), findsWidgets);
+
+      // Switch to Quiz Tab
+      await tester.tap(find.text('Edat Quizi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cümledeki boşluğa hangi edat (preposition) gelmelidir?'), findsOneWidget);
+
+      // Tap any option (inkwell)
+      final optionFinder = find.byType(InkWell);
+      expect(optionFinder, findsWidgets);
+      await tester.tap(optionFinder.first);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Doğru Kalıp:'), findsOneWidget);
+      expect(find.text('Sonraki Soruya Geç'), findsOneWidget);
     });
   });
 }

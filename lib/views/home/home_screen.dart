@@ -8,6 +8,7 @@ import '../../providers/question_provider.dart';
 import '../../providers/stats_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/vocabulary_provider.dart';
+import '../collocations/collocation_quiz_screen.dart';
 import '../grammar/grammar_study_screen.dart';
 import '../mistakes/mistake_notebook_screen.dart';
 import '../notes/question_notes_screen.dart';
@@ -668,6 +669,34 @@ class HomeScreen extends ConsumerWidget {
                         MaterialPageRoute(builder: (_) => const QuestionNotesScreen()),
                       );
                     },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Edat & Kolokasyon Lab',
+                    subtitle: 'Preposition Quiz & Kalıplar',
+                    icon: Icons.hub_rounded,
+                    gradient: const [Color(0xFF059669), Color(0xFF047857)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const CollocationQuizScreen()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Özel Deneme Sihirbazı',
+                    subtitle: 'Kendi Denemeni Kendin Oluştur',
+                    icon: Icons.auto_awesome,
+                    gradient: const [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+                    onTap: () => onTabChange(3),
                   ),
                 ),
               ],
