@@ -11,6 +11,7 @@ import '../../providers/vocabulary_provider.dart';
 import '../mistakes/mistake_notebook_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../reading/reading_hub_screen.dart';
+import '../stats/detailed_stats_screen.dart';
 import '../strategies/strategy_guide_screen.dart';
 import '../vocabulary/vocab_quiz_screen.dart';
 import '../vocabulary/vocab_match_screen.dart';
@@ -281,6 +282,39 @@ class HomeScreen extends ConsumerWidget {
                         color: AppColors.warning,
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 14),
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const DetailedStatsScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.insights, size: 16, color: AppColors.primaryLight),
+                          SizedBox(width: 6),
+                          Text(
+                            'Detaylı Puan & Zayıf Halka Analizini Gör',
+                            style: TextStyle(
+                              color: AppColors.primaryLight,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward, size: 14, color: AppColors.primaryLight),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

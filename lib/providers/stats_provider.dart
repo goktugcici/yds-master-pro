@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/seed_questions.dart';
 import '../models/question.dart';
 import 'local_storage_provider.dart';
+import 'question_provider.dart';
 import 'vocabulary_provider.dart';
 
 class OverallStats {
@@ -13,6 +13,10 @@ class OverallStats {
   final int wordsLearned;
   final int wordsTotal;
   final Map<QuestionCategory, double> categoryAccuracy;
+  final Map<QuestionCategory, int> categoryTotalSolved;
+  final QuestionCategory? weakestCategory;
+  final double estimatedScore;
+  final String letterGrade;
 
   const OverallStats({
     required this.streakDays,
@@ -23,12 +27,17 @@ class OverallStats {
     required this.wordsLearned,
     required this.wordsTotal,
     required this.categoryAccuracy,
+    this.categoryTotalSolved = const {},
+    this.weakestCategory,
+    this.estimatedScore = 0.0,
+    this.letterGrade = 'N/A',
   });
 }
 
 final statsProvider = Provider<OverallStats>((ref) {
   final storage = ref.watch(localStorageProvider);
   final vocabState = ref.watch(vocabularyProvider);
+  final questionState = ref.watch(questionNotifierProvider);
 
   final streak = storage.getStreak();
   final solvedMap = storage.getSolvedQuestions();
@@ -38,11 +47,11 @@ final statsProvider = Provider<OverallStats>((ref) {
   final totalWrong = totalSolved - totalCorrect;
   final accuracy = totalSolved > 0 ? (totalCorrect / totalSolved) * 100.0 : 0.0;
 
-  // Calculate per category accuracy
+  // Calculate per category accuracy across all questions
   final Map<QuestionCategory, int> categoryTotal = {};
   final Map<QuestionCategory, int> categoryCorrect = {};
 
-  for (final q in defaultSeedQuestions) {
+  for (final q in questionState.allQuestions) {
     if (solvedMap.containsKey(q.id)) {
       categoryTotal[q.category] = (categoryTotal[q.category] ?? 0) + 1;
       if (solvedMap[q.id] == true) {
@@ -52,10 +61,40 @@ final statsProvider = Provider<OverallStats>((ref) {
   }
 
   final Map<QuestionCategory, double> categoryAccuracy = {};
+  QuestionCategory? weakestCat;
+  double lowestAcc = 101.0;
+
   for (final cat in QuestionCategory.values) {
     final total = categoryTotal[cat] ?? 0;
     final correct = categoryCorrect[cat] ?? 0;
-    categoryAccuracy[cat] = total > 0 ? (correct / total) * 100.0 : 0.0;
+    final catAcc = total > 0 ? (correct / total) * 100.0 : 0.0;
+    categoryAccuracy[cat] = catAcc;
+
+    if (total > 0 && catAcc < lowestAcc) {
+      lowestAcc = catAcc;
+      weakestCat = cat;
+    }
+  }
+
+  // If no category has been solved yet, default weakest suggestion
+  weakestCat ??= QuestionCategory.grammar;
+
+  final estimatedScore = totalSolved >= 5 ? double.parse(accuracy.toStringAsFixed(1)) : 0.0;
+  String grade;
+  if (estimatedScore >= 90) {
+    grade = 'A (90-100)';
+  } else if (estimatedScore >= 80) {
+    grade = 'B (80-89)';
+  } else if (estimatedScore >= 70) {
+    grade = 'C (70-79)';
+  } else if (estimatedScore >= 60) {
+    grade = 'D (60-69)';
+  } else if (estimatedScore >= 50) {
+    grade = 'E (50-59)';
+  } else if (totalSolved >= 5) {
+    grade = 'F (<50)';
+  } else {
+    grade = 'Henüz Veri Yok';
   }
 
   return OverallStats(
@@ -67,6 +106,10 @@ final statsProvider = Provider<OverallStats>((ref) {
     wordsLearned: vocabState.learnedCount,
     wordsTotal: vocabState.allWords.length,
     categoryAccuracy: categoryAccuracy,
+    categoryTotalSolved: categoryTotal,
+    weakestCategory: weakestCat,
+    estimatedScore: estimatedScore,
+    letterGrade: grade,
   );
 });
 

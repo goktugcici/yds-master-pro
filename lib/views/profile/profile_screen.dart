@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../paywall/paywall_screen.dart';
+import '../stats/detailed_stats_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -130,6 +131,37 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Detailed Performance & Analytics Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.insights, color: AppColors.primaryLight),
+              ),
+              title: const Text('Performans & Zayıf Halka Raporu', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Tahmini YDS neti, harf notu ve kategori grafiği', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const DetailedStatsScreen()),
+                );
+              },
             ),
           ),
 

@@ -4,6 +4,7 @@ import '../data/seed_questions.dart';
 import '../models/exam.dart';
 import '../models/question.dart';
 import 'local_storage_provider.dart';
+import 'question_provider.dart';
 
 class ActiveExamState {
   final Exam exam;
@@ -56,15 +57,25 @@ class ExamNotifier extends StateNotifier<ActiveExamState?> {
     super.dispose();
   }
 
-  // Pre-configured mock exams
-  static List<Exam> getAvailableExams() {
+  // Pre-configured mock exams & branch exams
+  static List<Exam> getAvailableExams([List<Question>? allPool]) {
+    final pool = (allPool != null && allPool.isNotEmpty) ? allPool : defaultSeedQuestions;
+
+    List<Question> sampleQuestions(List<QuestionCategory> categories, int count) {
+      final filtered = pool.where((q) => categories.contains(q.category)).toList();
+      if (filtered.length >= count) {
+        return filtered.take(count).toList();
+      }
+      return pool.take(count).toList();
+    }
+
     return [
       Exam(
         id: 'exam_mini_1',
         title: 'YDS Hızlı Mini Deneme (20 Soru)',
         description: 'Tüm YDS soru türlerinden dengeli 20 soru. 45 dakikalık pratik simülasyonu.',
         durationMinutes: 45,
-        questions: defaultSeedQuestions, // Uses the available questions pool
+        questions: sampleQuestions(QuestionCategory.values, 20),
         isPremiumOnly: false,
       ),
       Exam(
@@ -72,7 +83,7 @@ class ExamNotifier extends StateNotifier<ActiveExamState?> {
         title: 'YDS 2026/1 Tam Simülasyon (80 Soru)',
         description: 'ÖSYM standartlarında 80 soruluk gerçek sınav deneyimi ve 180 dakika süre yönetimi.',
         durationMinutes: 180,
-        questions: defaultSeedQuestions,
+        questions: sampleQuestions(QuestionCategory.values, 80),
         isPremiumOnly: true,
       ),
       Exam(
@@ -80,10 +91,80 @@ class ExamNotifier extends StateNotifier<ActiveExamState?> {
         title: 'YDS Akademik Master Deneme (80 Soru)',
         description: 'İleri seviye akademik makale ve çeldirici soru tipleri içeren PRO denemesi.',
         durationMinutes: 180,
-        questions: defaultSeedQuestions,
+        questions: sampleQuestions(QuestionCategory.values, 80),
+        isPremiumOnly: true,
+      ),
+      // Branş Denemeleri (Branch Exams)
+      Exam(
+        id: 'exam_branch_vocab_grammar',
+        title: 'Kelime & Gramer Branş Denemesi (26 Soru)',
+        description: 'YDS ilk 26 soruluk Kelime, Phrasal Verb, Preposition ve Gramer bloğu simülasyonu.',
+        durationMinutes: 40,
+        questions: sampleQuestions([QuestionCategory.vocabulary, QuestionCategory.grammar], 26),
+        isPremiumOnly: false,
+      ),
+      Exam(
+        id: 'exam_branch_reading',
+        title: 'Okuma & Paragraf Branş Denemesi (20 Soru)',
+        description: 'YDS\'nin en belirleyici 20 soruluk akademik okuma parçaları ve paragraf tamamlama bloğu.',
+        durationMinutes: 45,
+        questions: sampleQuestions([QuestionCategory.reading, QuestionCategory.paragraphCompletion], 20),
+        isPremiumOnly: true,
+      ),
+      Exam(
+        id: 'exam_branch_translation',
+        title: 'Çeviri & Cümle Tamamlama Branş Denemesi (20 Soru)',
+        description: 'Cümle tamamlama ve her iki yönde Türkçe-İngilizce çeviri strateji testi.',
+        durationMinutes: 35,
+        questions: sampleQuestions([
+          QuestionCategory.sentenceCompletion,
+          QuestionCategory.translationEnTr,
+          QuestionCategory.translationTrEn,
+        ], 20),
+        isPremiumOnly: false,
+      ),
+      Exam(
+        id: 'exam_branch_skills',
+        title: 'Anlam Bütünlüğü & İletişim Branş Denemesi (14 Soru)',
+        description: 'Karşılıklı konuşma, anlamca en yakın cümle ve akışı bozan cümleyi bulma pratik testi.',
+        durationMinutes: 25,
+        questions: sampleQuestions([
+          QuestionCategory.dialogue,
+          QuestionCategory.restatement,
+          QuestionCategory.irrelevantSentence,
+        ], 14),
         isPremiumOnly: true,
       ),
     ];
+  }
+
+  static Exam createCustomExam({
+    required String title,
+    required int questionCount,
+    required int durationMinutes,
+    required List<QuestionCategory> categories,
+    required List<Question> pool,
+    String? difficulty,
+    bool isPremiumOnly = false,
+  }) {
+    List<Question> filtered = pool.where((q) => categories.contains(q.category)).toList();
+    if (difficulty != null && difficulty != 'Tümü') {
+      final diffFiltered = filtered.where((q) => q.difficulty.toLowerCase() == difficulty.toLowerCase()).toList();
+      if (diffFiltered.isNotEmpty) {
+        filtered = diffFiltered;
+      }
+    }
+    filtered = List<Question>.from(filtered)..shuffle();
+    final selectedQuestions = filtered.take(questionCount).toList();
+
+    return Exam(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      description: '${categories.length} kategori • ${selectedQuestions.length} soru • $durationMinutes dakika özel deneme',
+      durationMinutes: durationMinutes,
+      questions: selectedQuestions.isNotEmpty ? selectedQuestions : pool.take(questionCount).toList(),
+      isPremiumOnly: isPremiumOnly,
+    );
   }
 
   void startExam(Exam exam) {
@@ -197,4 +278,9 @@ final examStateProvider =
 final examHistoryProvider = Provider<List<ExamResult>>((ref) {
   final storage = ref.watch(localStorageProvider);
   return storage.getExamResults();
+});
+
+final availableExamsProvider = Provider<List<Exam>>((ref) {
+  final qState = ref.watch(questionNotifierProvider);
+  return ExamNotifier.getAvailableExams(qState.allQuestions);
 });

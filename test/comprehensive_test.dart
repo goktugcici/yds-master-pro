@@ -17,8 +17,11 @@ import 'package:yds_pro/providers/theme_provider.dart';
 import 'package:yds_pro/providers/vocabulary_provider.dart';
 import 'package:yds_pro/views/home/home_screen.dart';
 import 'package:yds_pro/views/mistakes/mistake_notebook_screen.dart';
+import 'package:yds_pro/data/seed_readings.dart';
+import 'package:yds_pro/views/exam/exam_list_screen.dart';
 import 'package:yds_pro/views/paywall/paywall_screen.dart';
 import 'package:yds_pro/views/profile/profile_screen.dart';
+import 'package:yds_pro/views/stats/detailed_stats_screen.dart';
 import 'package:yds_pro/views/strategies/strategy_guide_screen.dart';
 import 'package:yds_pro/views/vocabulary/vocabulary_screen.dart';
 
@@ -557,5 +560,135 @@ void main() {
       expect(find.textContaining('%25 İndirimle Başla'), findsOneWidget);
     });
   });
+
+  group('7. Branch Exams, Custom Exam Wizard & Detailed Stats Tests', () {
+    late LocalStorage storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = await LocalStorage.init();
+    });
+
+    test('getAvailableExams returns both full simulations and branch exams', () {
+      final exams = ExamNotifier.getAvailableExams();
+      expect(exams.length, greaterThanOrEqualTo(6));
+
+      final branchExams = exams.where((e) => e.id.contains('branch')).toList();
+      expect(branchExams.length, greaterThanOrEqualTo(3));
+
+      final vocabGrammar = exams.firstWhere((e) => e.id == 'exam_branch_vocab_grammar');
+      expect(vocabGrammar.title, contains('Kelime & Gramer'));
+      expect(vocabGrammar.durationMinutes, equals(40));
+      expect(vocabGrammar.isPremiumOnly, isFalse);
+
+      final readingBranch = exams.firstWhere((e) => e.id == 'exam_branch_reading');
+      expect(readingBranch.title, contains('Okuma & Paragraf'));
+      expect(readingBranch.durationMinutes, equals(45));
+    });
+
+    test('createCustomExam samples questions from provided pool by category', () {
+      final custom = ExamNotifier.createCustomExam(
+        title: 'Özel Test Denemesi',
+        questionCount: 10,
+        durationMinutes: 20,
+        categories: [QuestionCategory.vocabulary, QuestionCategory.grammar],
+        pool: defaultSeedQuestions,
+        difficulty: 'Tümü',
+      );
+
+      expect(custom.title, equals('Özel Test Denemesi'));
+      expect(custom.durationMinutes, equals(20));
+      expect(custom.questions.isNotEmpty, isTrue);
+      expect(custom.questions.length, lessThanOrEqualTo(10));
+      for (final q in custom.questions) {
+        expect(
+          [QuestionCategory.vocabulary, QuestionCategory.grammar],
+          contains(q.category),
+        );
+      }
+    });
+
+    test('OverallStats computes estimatedScore, letterGrade, and identifies weakestCategory', () {
+      final container = ProviderContainer(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+      );
+
+      final stats = container.read(statsProvider);
+      expect(stats.streakDays, greaterThanOrEqualTo(0));
+      expect(stats.totalSolved, equals(0));
+      expect(stats.letterGrade, equals('Henüz Veri Yok'));
+      expect(stats.weakestCategory, isNotNull);
+    });
+
+    test('Reading articles pool has 5 comprehensive academic passages', () {
+      expect(defaultReadingArticles.length, equals(5));
+      final topics = defaultReadingArticles.map((a) => a.topic).toList();
+      expect(topics, contains('Tıp & Biyoloji'));
+      expect(topics, contains('Ekonomi & Çevre'));
+      expect(topics, contains('Tarih & Arkeoloji'));
+      expect(topics, contains('Psikoloji & Karar Kuramı'));
+      expect(topics, contains('Deniz Biyolojisi & Jeoloji'));
+
+      for (final article in defaultReadingArticles) {
+        expect(article.contentEn.isNotEmpty, isTrue);
+        expect(article.contentTr.isNotEmpty, isTrue);
+        expect(article.vocabulary.isNotEmpty, isTrue);
+        expect(article.questions.length, greaterThanOrEqualTo(2));
+      }
+    });
+
+    testWidgets('DetailedStatsScreen displays performance cards, golden rule and mastery bars',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: DetailedStatsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Performans & Zayıf Halka Analizi'), findsOneWidget);
+      expect(find.text('Tahmini YDS Puanı'), findsOneWidget);
+      expect(find.textContaining('ÖSYM Bilgisi: YDS\'de yanlışlar doğruyu götürmez'), findsOneWidget);
+      expect(find.text('Kategori Bazlı Başarı Analizi'), findsOneWidget);
+      expect(find.text('Kelime Bilgisi'), findsOneWidget);
+      expect(find.text('Gramer & Dilbilgisi'), findsOneWidget);
+    });
+
+    testWidgets('ExamListScreen shows custom exam wizard FAB and branch tab filters',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: ExamListScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('YDS Deneme Sınavları'), findsOneWidget);
+      expect(find.text('Özel Sınav Oluştur'), findsOneWidget);
+      expect(find.text('Kendi Denemeni Oluştur (Sihirbaz)'), findsOneWidget);
+      expect(find.text('Branş Denemeleri'), findsOneWidget);
+    });
+  });
 }
+
 

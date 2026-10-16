@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum QuestionCategory {
   vocabulary,
   grammar,
@@ -34,6 +36,32 @@ extension QuestionCategoryExtension on QuestionCategory {
         return 'Paragraf Tamamlama';
       case QuestionCategory.irrelevantSentence:
         return 'Anlam Bütünlüğünü Bozan Cümle';
+    }
+  }
+
+  String get titleTr => title;
+
+  IconData get icon {
+    switch (this) {
+      case QuestionCategory.vocabulary:
+        return Icons.menu_book;
+      case QuestionCategory.grammar:
+        return Icons.spellcheck;
+      case QuestionCategory.sentenceCompletion:
+        return Icons.extension;
+      case QuestionCategory.translationEnTr:
+      case QuestionCategory.translationTrEn:
+        return Icons.translate;
+      case QuestionCategory.reading:
+        return Icons.article;
+      case QuestionCategory.dialogue:
+        return Icons.forum;
+      case QuestionCategory.restatement:
+        return Icons.sync_alt;
+      case QuestionCategory.paragraphCompletion:
+        return Icons.post_add;
+      case QuestionCategory.irrelevantSentence:
+        return Icons.remove_circle_outline;
     }
   }
 

@@ -220,4 +220,150 @@ final List<ReadingArticle> defaultReadingArticles = [
     ],
     isProOnly: false,
   ),
+  const ReadingArticle(
+    id: 'read_4',
+    title: 'The Cognitive Architecture of Heuristics and Confirmation Bias',
+    topic: 'Psikoloji & Karar Kuramı',
+    level: 'B2 - C1',
+    readTimeMinutes: 5,
+    contentEn:
+        'Human judgment is frequently compromised by systematic cognitive shortcuts termed heuristics. While evolutionary biologists argue that these mental rules of thumb allowed ancestral humans to make rapid, survival-critical choices under acute threat, modern decision environments are far too convoluted for intuition alone.\n\n'
+        'Among the most pervasive cognitive distortions is confirmation bias—the subconscious inclination to seek out, interpret, and recall information in a manner that validates preexisting convictions. When confronted with ambiguous data, individuals selectively amplify evidence aligning with their viewpoints while disregarding or aggressively scrutinizing dissonant facts. In an era dominated by hyper-personalized digital algorithms and social media echo chambers, confirmation bias drastically exacerbates political polarization and stifles intellectual curiosity.\n\n'
+        'Overcoming these pervasive biases demands cognitive humility and deliberate metacognition. Behavioral scientists emphasize that individuals must actively cultivate an empirical mindset, intentionally subjecting their own cherished hypotheses to stringent falsification before reaching definitive verdicts.',
+    contentTr:
+        'İnsan muhakemesi, sezgisel yöntemler (heuristics) olarak adlandırılan sistematik zihinsel kestirmeler nedeniyle sıklıkla zaafa uğrar. Evrimsel biyologlar, bu pratik zihinsel kuralların ilkel insanların ani tehditler altında hızlı ve hayati kararlar almasını sağladığını öne sürseler de, modern karar alma ortamları yalnızca sezgilere bırakılamayacak kadar karmaşıktır.\n\n'
+        'En yaygın bilişsel çarpıtmalardan biri doğrulama önyargısıdır (confirmation bias); bu, bireyin önceden var olan inançlarını pekiştiren bilgileri arama, yorumlama ve hatırlama yönündeki bilinçdışı eğilimidir. Muğlak verilerle karşılaşıldığında, bireyler kendi görüşleriyle örtüşen kanıtları seçici biçimde yüceltirken, çelişen olguları görmezden gelir veya acımasızca eleştirir. Kişiselleştirilmiş dijital algoritmaların ve yankı odalarının hüküm sürdüğü bir çağda, doğrulama önyargısı siyasi kutuplaşmayı radikal biçimde körüklemekte ve entelektüel merakı köreltmektedir.\n\n'
+        'Bu köklü önyargıların üstesinden gelmek, bilişsel alçakgönüllülük ve bilinçli bir üstbiliş (metacognition) gerektirir. Davranış bilimcileri, bireylerin ampirik bir zihniyet geliştirmeleri ve kesin yargılara varmadan önce kendi benimsedikleri hipotezleri bilinçli olarak katı bir yanlışlanabilirlik testine tabi tutmaları gerektiğini vurgulamaktadır.',
+    vocabulary: [
+      ReadingVocab(
+        english: 'compromise',
+        turkish: 'zaafa uğratmak, tehlikeye atmak',
+        definition: 'To weaken, impair, or expose to risk or discredit.',
+      ),
+      ReadingVocab(
+        english: 'convoluted',
+        turkish: 'girift, son derece karmaşık',
+        definition: 'Extremely complex and difficult to follow or understand.',
+      ),
+      ReadingVocab(
+        english: 'pervasive',
+        turkish: 'yaygın, her yere sinmiş',
+        definition: 'Spreading widely throughout an area or a group of people.',
+      ),
+      ReadingVocab(
+        english: 'dissonant',
+        turkish: 'uyumsuz, çelişen',
+        definition: 'Unsuitable or inharmonious in combination; conflicting.',
+      ),
+      ReadingVocab(
+        english: 'falsification',
+        turkish: 'yanlışlama, çürütme testi',
+        definition: 'The act of disproving a proposition, hypothesis, or theory.',
+      ),
+    ],
+    questions: [
+      ReadingQuestion(
+        questionText:
+            'According to the author, heuristics were originally advantageous because they ----.',
+        options: [
+          'A) enabled prehistoric humans to execute swift decisions critical for survival',
+          'B) prevented early hominids from developing emotional prejudices',
+          'C) made modern economic analysis far more predictable',
+          'D) eliminated the necessity for social cooperation',
+          'E) guaranteed 100 percent analytical accuracy in all scenarios',
+        ],
+        correctIndex: 0,
+        explanation:
+            'Doğru Cevap: A. Birinci paragrafta evrimsel biyologların bu zihinsel kestirmelerin ilkel insanların tehdit anında hayatta kalma kararlarını hızlandırdığını savunduğu belirtilmektedir.',
+      ),
+      ReadingQuestion(
+        questionText:
+            'The passage suggests that in the contemporary digital landscape, confirmation bias ----.',
+        options: [
+          'A) has been entirely eradicated through algorithmic fact-checking',
+          'B) is intensified by algorithmic content filters and widens societal divisions',
+          'C) encourages objective discourse across ideological boundaries',
+          'D) affects only individuals who lack formal higher education',
+          'E) plays no meaningful role in public opinion formation',
+        ],
+        correctIndex: 1,
+        explanation:
+            'Doğru Cevap: B. İkinci paragrafta kişiselleştirilmiş algoritmaların ve yankı odalarının doğrulama önyargısını büyüterek siyasi kutuplaşmayı körüklediği vurgulanmaktadır.',
+      ),
+    ],
+    isProOnly: true,
+  ),
+  const ReadingArticle(
+    id: 'read_5',
+    title: 'Abyssal Hydrothermal Vents and Chemosynthetic Ecosystems',
+    topic: 'Deniz Biyolojisi & Jeoloji',
+    level: 'C1',
+    readTimeMinutes: 5,
+    contentEn:
+        'Prior to the serendipitous discovery of hydrothermal vents along the Galápagos Rift in 1977, marine biologists assumed that all terrestrial and aquatic life was fundamentally reliant on solar radiation and photosynthetic primary production. The abyssal plains, devoid of sunlight and subjected to crushing hydrostatic pressures, were conceptualized as biological deserts.\n\n'
+        'Hydrothermal chimneys, commonly known as black smokers, shattered this paradigm. Ejecting superheated mineral plumes exceeding 350 degrees Celsius, these geothermal fissures support astonishingly dense ecosystems completely independent of solar energy. Instead of sunlight, specialized autotrophic bacteria harness the chemical energy stored in dissolved hydrogen sulfide—a process known as chemosynthesis—to synthesize organic macromolecules.\n\n'
+        'These extremophilic microbes form symbiotic mutualisms with colossal vestimentiferan tube worms, vent clams, and blind hydrothermal shrimp. Astrobiologists now investigate these deep-ocean ecosystems as analog environments for extraterrestrial life, positing that subterranean hydrothermal activity on icy moons such as Europa and Enceladus could potentially harbor comparable alien biospheres.',
+    contentTr:
+        '1977 yılında Galápagos Yarığı boyunca hidrotermal bacaların tesadüfen keşfinden önce, deniz biyologları karasal ve sucul tüm yaşamın temel olarak güneş ışınımına ve fotosentetik birincil üretime bağımlı olduğunu varsayıyorlardı. Güneş ışığından yoksun ve ezici hidrostatik basınca maruz kalan abisal derin deniz düzlükleri, biyolojik çöller olarak kabul ediliyordu.\n\n'
+        'Yaygın olarak "kara bacalar" (black smokers) olarak bilinen hidrotermal bacalar bu paradigmayı yerle bir etti. 350 santigrat dereceyi aşan aşırı ısınmış mineral sütunları fışkırtan bu jeotermal yarıklar, güneş enerjisinden tamamen bağımsız, şaşırtıcı derecede yoğun ekosistemleri beslemektedir. Güneş ışığı yerine, özelleşmiş ototrof bakteriler, organik makromolekülleri sentezlemek için çözünmüş hidrojen sülfürde depolanan kimyasal enerjiyi (kemosentez olarak bilinen bir süreç) kullanırlar.\n\n'
+        'Bu ekstremofil mikroplar, dev tüp solucanları, havalandırma midyeleri ve kör karideslerle ortak yaşam (simbiyotik mutualizm) kurarlar. Astrobiyologlar günümüzde bu derin okyanus ekosistemlerini dünya dışı yaşam için benzer ortamlar olarak araştırmakta; Europa ve Enceladus gibi buzlu uydulardaki yeraltı hidrotermal aktivitesinin benzer uzaylı biyosferlerine ev sahipliği yapabileceğini öne sürmektedirler.',
+    vocabulary: [
+      ReadingVocab(
+        english: 'serendipitous',
+        turkish: 'şans eseri olan, tesadüfi',
+        definition: 'Occurring or discovered by chance in a happy or beneficial way.',
+      ),
+      ReadingVocab(
+        english: 'devoid of',
+        turkish: '-den yoksun, mahrum',
+        definition: 'Entirely lacking or free from.',
+      ),
+      ReadingVocab(
+        english: 'shatter',
+        turkish: 'tuzla buz etmek, yıkmak',
+        definition: 'To break violently into pieces; to thoroughly destroy a belief or concept.',
+      ),
+      ReadingVocab(
+        english: 'harness',
+        turkish: 'kullanmak, faydalanmak, dizginlemek',
+        definition: 'To control and make use of natural resources to produce energy.',
+      ),
+      ReadingVocab(
+        english: 'positing',
+        turkish: 'varsaymak, ileri sürmek',
+        definition: 'Assuming the existence or truth of something as a basis for reasoning.',
+      ),
+    ],
+    questions: [
+      ReadingQuestion(
+        questionText:
+            'The discovery of deep-sea hydrothermal vents was revolutionary because ----.',
+        options: [
+          'A) it demonstrated that complex life can flourish without any sunlight via chemosynthetic energy',
+          'B) it proved that photosynthetic plants can survive without carbon dioxide',
+          'C) it revealed that ocean temperatures are uniform at all depths',
+          'D) it showed that deep-sea animals can only survive for several hours',
+          'E) it confirmed that volcanic vents heat up the entire planetary surface',
+        ],
+        correctIndex: 0,
+        explanation:
+            'Doğru Cevap: A. İkinci paragrafta bu bacaların güneş ışığından tamamen bağımsız, kemosentez ile yaşayan zengin ekosistemleri desteklediği açıklanmaktadır.',
+      ),
+      ReadingQuestion(
+        questionText:
+            'Why are astrobiologists intrigued by hydrothermal vent communities?',
+        options: [
+          'A) They believe these vents can be used to generate electricity on the Moon',
+          'B) They consider them terrestrial models for potential chemosynthetic life on icy extraterrestrial moons',
+          'C) They think deep-sea bacteria were brought to Earth by meteorites',
+          'D) They intend to transport tube worms to the surface of Mars',
+          'E) They suspect human astronauts can survive underwater indefinitely',
+        ],
+        correctIndex: 1,
+        explanation:
+            'Doğru Cevap: B. Son cümlede astrobiyologların Europa ve Enceladus gibi buzlu uydularda benzer hidrotermal yaşam bulunabileceği hipoteziyle bu ekosistemleri incelediği belirtilmektedir.',
+      ),
+    ],
+    isProOnly: true,
+  ),
 ];

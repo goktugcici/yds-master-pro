@@ -248,3 +248,5 @@ final questionProvider =
     StateNotifierProvider<QuestionNotifier, QuestionPracticeState>((ref) {
   return QuestionNotifier(ref);
 });
+
+final questionNotifierProvider = questionProvider;
