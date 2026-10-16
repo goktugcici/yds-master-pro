@@ -9,6 +9,7 @@ import '../../providers/stats_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/vocabulary_provider.dart';
 import '../collocations/collocation_quiz_screen.dart';
+import '../cohesion/cohesion_lab_screen.dart';
 import '../grammar/grammar_study_screen.dart';
 import '../mistakes/mistake_notebook_screen.dart';
 import '../notes/question_notes_screen.dart';
@@ -730,6 +731,34 @@ class HomeScreen extends ConsumerWidget {
                         MaterialPageRoute(builder: (_) => const DetailedStatsScreen()),
                       );
                     },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Metin Bütünlüğü Lab',
+                    subtitle: 'Cümle Atma & Paragraf Tamamlama',
+                    icon: Icons.alt_route_rounded,
+                    gradient: const [Color(0xFF0D9488), Color(0xFF115E59)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const CohesionLabScreen()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Tüm Soru Tipleri',
+                    subtitle: '11 Kategori • 3.500+ Soru',
+                    icon: Icons.category_rounded,
+                    gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
+                    onTap: () => onTabChange(2),
                   ),
                 ),
               ],

@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../collocations/collocation_quiz_screen.dart';
+import '../cohesion/cohesion_lab_screen.dart';
 import '../grammar/grammar_study_screen.dart';
 import '../notes/question_notes_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -288,6 +289,37 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const PhrasalVerbsScreen()),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Metin Bütünlüğü & Akış Laboratuvarı Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.alt_route_rounded, color: Color(0xFF0D9488)),
+              ),
+              title: const Text('Metin Bütünlüğü & Akış Lab', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Paragraf tamamlama & anlam akışını bozan cümle taktikleri', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CohesionLabScreen()),
                 );
               },
             ),

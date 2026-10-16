@@ -13,6 +13,7 @@ import 'package:yds_pro/views/grammar/grammar_study_screen.dart';
 import 'package:yds_pro/views/collocations/collocation_quiz_screen.dart';
 import 'package:yds_pro/views/notes/question_notes_screen.dart';
 import 'package:yds_pro/views/phrasal_verbs/phrasal_verbs_screen.dart';
+import 'package:yds_pro/views/cohesion/cohesion_lab_screen.dart';
 import 'package:yds_pro/views/stats/detailed_stats_screen.dart';
 
 void main() {
@@ -288,6 +289,49 @@ void main() {
 
       expect(find.textContaining('Doğru Kalıp:'), findsOneWidget);
       expect(find.text('Sonraki Soruya Geç'), findsOneWidget);
+    });
+
+    testWidgets('Journey 8: Cohesion Lab Discourse Analysis and Clue Spotting',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: CohesionLabScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Metin Bütünlüğü & Akış Laboratuvarı'), findsOneWidget);
+
+      // Switch to Practice Tab
+      await tester.tap(find.text('İnteraktif Soru Çözücü'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kentsel Isı Adaları ve Yeşil Çatılar'), findsOneWidget);
+
+      // Click Clue Highlighter
+      await tester.tap(find.text('İpuçlarını Göster'));
+      await tester.pumpAndSettle();
+      expect(find.text('İpuçlarını Gizle'), findsOneWidget);
+
+      // Select option D
+      await tester.tap(find.text('D) IV'));
+      await tester.pumpAndSettle();
+
+      // Submit
+      await tester.tap(find.text('Cevabı Onayla & Taktik Analizi Gör'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Harika! Doğru Seçim'), findsOneWidget);
+      expect(find.text('Sonraki Soru'), findsOneWidget);
     });
   });
 }

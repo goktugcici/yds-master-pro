@@ -33,6 +33,8 @@ import 'package:yds_pro/data/seed_phrasal_verbs.dart';
 import 'package:yds_pro/views/phrasal_verbs/phrasal_verbs_screen.dart';
 import 'package:yds_pro/views/exam/exam_result_screen.dart';
 import 'package:yds_pro/views/exam/exam_active_screen.dart';
+import 'package:yds_pro/data/seed_cohesion_drills.dart';
+import 'package:yds_pro/views/cohesion/cohesion_lab_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -1082,6 +1084,138 @@ void main() {
       expect(find.text('Soru Süresi: 00:00'), findsOneWidget);
       expect(find.text('ÖSYM Hedefi: ~2:15 dk/soru'), findsOneWidget);
       expect(find.text('Soru 1 / 5'), findsOneWidget);
+
+      container.read(examStateProvider.notifier).cancelExam();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+  });
+
+  group('13. Paragraph Cohesion Lab & Interactive OMR Tests', () {
+    late LocalStorage storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = await LocalStorage.init();
+    });
+
+    test('defaultCohesionDrills contains authentic YDS cohesion exercises with tactics', () {
+      expect(defaultCohesionDrills.length, greaterThanOrEqualTo(5));
+      for (final drill in defaultCohesionDrills) {
+        expect(drill.id.isNotEmpty, isTrue);
+        expect(drill.title.isNotEmpty, isTrue);
+        expect(drill.passage.isNotEmpty, isTrue);
+        expect(drill.options.length, equals(5));
+        expect(drill.correctIndex, inInclusiveRange(0, 4));
+        expect(drill.keyClues.isNotEmpty, isTrue);
+        expect(drill.tacticExplanation.isNotEmpty, isTrue);
+        expect(drill.translation.isNotEmpty, isTrue);
+      }
+    });
+
+    testWidgets('CohesionLabScreen renders tactics, toggles clues, and answers drill',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: CohesionLabScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Metin Bütünlüğü & Akış Laboratuvarı'), findsOneWidget);
+      expect(find.text('ÖSYM Taktik Sırları'), findsOneWidget);
+      expect(find.text('İnteraktif Soru Çözücü'), findsOneWidget);
+      expect(find.textContaining('Zamir & Gönderim İfadeleri'), findsOneWidget);
+
+      // Switch to Practice Tab
+      await tester.tap(find.text('İnteraktif Soru Çözücü'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kentsel Isı Adaları ve Yeşil Çatılar'), findsOneWidget);
+      expect(find.text('İpuçlarını Göster'), findsOneWidget);
+
+      // Toggle clue highlighting
+      await tester.tap(find.text('İpuçlarını Göster'));
+      await tester.pumpAndSettle();
+      expect(find.text('İpuçlarını Gizle'), findsOneWidget);
+
+      // Select an option
+      await tester.tap(find.text('D) IV'));
+      await tester.pumpAndSettle();
+
+      // Submit
+      await tester.tap(find.text('Cevabı Onayla & Taktik Analizi Gör'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Harika! Doğru Seçim'), findsOneWidget);
+      expect(find.textContaining('Zamir & Konu Bütünlüğü Takibi'), findsOneWidget);
+      expect(find.text('Sonraki Soru'), findsOneWidget);
+    });
+
+    testWidgets('ExamActiveScreen renders and interacts with ÖSYM Optik Form',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final container = ProviderContainer(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+      );
+
+      final exam = Exam(
+        id: 'optik_exam',
+        title: 'Optik Deneme Sınavı',
+        description: 'Test',
+        durationMinutes: 10,
+        questions: defaultSeedQuestions.take(5).toList(),
+      );
+
+      container.read(examStateProvider.notifier).startExam(exam);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ExamActiveScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open Question Sheet / Optik Form
+      await tester.tap(find.text('Soru Haritası'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ÖSYM Optik Form'), findsOneWidget);
+
+      // Switch to Optik Form tab
+      await tester.tap(find.text('ÖSYM Optik Form'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1.'), findsOneWidget);
+      expect(find.text('A'), findsWidgets);
+      expect(find.text('B'), findsWidgets);
+
+      // Mark bubble 'B' for question 1
+      await tester.tap(find.text('B').first);
+      await tester.pumpAndSettle();
+
+      expect(container.read(examStateProvider)?.userAnswers[exam.questions.first.id], equals(1));
+
+      // Close modal
+      tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+      await tester.pumpAndSettle();
 
       container.read(examStateProvider.notifier).cancelExam();
       await tester.pumpWidget(const SizedBox());

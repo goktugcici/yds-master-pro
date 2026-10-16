@@ -359,64 +359,223 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Soru Haritası',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(state.exam.questions.length, (idx) {
-                  final q = state.exam.questions[idx];
-                  final isAnswered = state.userAnswers.containsKey(q.id);
-                  final isCurrent = state.currentQuestionIndex == idx;
+        int activeTab = 0; // 0 = Soru Haritası, 1 = Optik Form
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      ref.read(examStateProvider.notifier).jumpToQuestion(idx);
-                    },
-                    child: Container(
-                      width: 42,
-                      height: 42,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: isCurrent
-                            ? AppColors.primaryLight
-                            : (isAnswered
-                                ? AppColors.success.withValues(alpha: 0.2)
-                                : Colors.grey.withValues(alpha: 0.15)),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isCurrent
-                              ? AppColors.primary
-                              : (isAnswered ? AppColors.success : Colors.grey),
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
+            final liveState = ref.watch(examStateProvider) ?? state;
+            final totalQ = liveState.exam.questions.length;
+            final answeredQ = liveState.userAnswers.length;
+
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(sheetContext).size.height * 0.78,
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Tab Switcher Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              ChoiceChip(
+                                label: const Text('Soru Haritası'),
+                                selected: activeTab == 0,
+                                onSelected: (_) => setSheetState(() => activeTab = 0),
+                              ),
+                              const SizedBox(width: 8),
+                              ChoiceChip(
+                                label: const Text('ÖSYM Optik Form'),
+                                selected: activeTab == 1,
+                                onSelected: (_) => setSheetState(() => activeTab = 1),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Text(
-                        '${idx + 1}',
-                        style: TextStyle(
+                      const SizedBox(width: 8),
+                      Text(
+                        '$answeredQ / $totalQ',
+                        style: const TextStyle(
+                          fontSize: 12.5,
                           fontWeight: FontWeight.bold,
-                          color: isCurrent ? Colors.white : null,
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // TAB 0: Question Grid Map
+                  if (activeTab == 0) ...[
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(totalQ, (idx) {
+                            final q = liveState.exam.questions[idx];
+                            final isAnswered = liveState.userAnswers.containsKey(q.id);
+                            final isCurrent = liveState.currentQuestionIndex == idx;
+
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.of(ctx).pop();
+                                ref.read(examStateProvider.notifier).jumpToQuestion(idx);
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isCurrent
+                                      ? AppColors.primaryLight
+                                      : (isAnswered
+                                          ? AppColors.success.withValues(alpha: 0.2)
+                                          : Colors.grey.withValues(alpha: 0.15)),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isCurrent
+                                        ? AppColors.primary
+                                        : (isAnswered ? AppColors.success : Colors.grey),
+                                    width: isCurrent ? 2 : 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${idx + 1}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isCurrent ? Colors.white : null,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
                         ),
                       ),
                     ),
-                  );
-                }),
+                  ],
+
+                  // TAB 1: Authentic ÖSYM Optical Answer Sheet
+                  if (activeTab == 1) ...[
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? Colors.white10 : const Color(0xFFFDE68A),
+                          ),
+                        ),
+                        child: ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: totalQ,
+                          separatorBuilder: (_, __) => const Divider(height: 12),
+                          itemBuilder: (context, idx) {
+                            final q = liveState.exam.questions[idx];
+                            final selectedOpt = liveState.userAnswers[q.id];
+                            final isCurrent = liveState.currentQuestionIndex == idx;
+
+                            return Row(
+                              children: [
+                                // Question Number clickable jump
+                                InkWell(
+                                  onTap: () {
+                                    Navigator.of(ctx).pop();
+                                    ref.read(examStateProvider.notifier).jumpToQuestion(idx);
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    width: 38,
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: isCurrent
+                                          ? AppColors.primaryLight.withValues(alpha: 0.15)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '${idx + 1}.',
+                                      style: TextStyle(
+                                        fontWeight: isCurrent ? FontWeight.w900 : FontWeight.bold,
+                                        fontSize: 13.5,
+                                        color: isCurrent ? AppColors.primaryLight : null,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+
+                                // Bubbles: A, B, C, D, E
+                                ...List.generate(5, (optIdx) {
+                                  final isBubbleMarked = selectedOpt == optIdx;
+
+                                  return Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        ref
+                                            .read(examStateProvider.notifier)
+                                            .selectAnswer(q.id, optIdx);
+                                        setSheetState(() {});
+                                      },
+                                      child: Container(
+                                        height: 32,
+                                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isBubbleMarked
+                                              ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF1E293B))
+                                              : Colors.transparent,
+                                          border: Border.all(
+                                            color: isBubbleMarked
+                                                ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF1E293B))
+                                                : Colors.grey.withValues(alpha: 0.6),
+                                            width: isBubbleMarked ? 2 : 1.2,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          String.fromCharCode(65 + optIdx),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: isBubbleMarked
+                                                ? (isDark ? Colors.black : Colors.white)
+                                                : (isDark ? Colors.white70 : Colors.black87),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
