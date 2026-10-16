@@ -1,11 +1,44 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/exam.dart';
 import '../../providers/exam_provider.dart';
 import 'exam_result_screen.dart';
 
-class ExamActiveScreen extends ConsumerWidget {
+class ExamActiveScreen extends ConsumerStatefulWidget {
   const ExamActiveScreen({super.key});
+
+  @override
+  ConsumerState<ExamActiveScreen> createState() => _ExamActiveScreenState();
+}
+
+class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
+  Timer? _timer;
+  int _questionSeconds = 0;
+  int _lastQuestionIndex = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    _startQuestionTimer();
+  }
+
+  void _startQuestionTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _questionSeconds++;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   String _formatTimer(int totalSeconds) {
     final hours = totalSeconds ~/ 3600;
@@ -17,8 +50,14 @@ class ExamActiveScreen extends ConsumerWidget {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  String _formatQuestionSeconds(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final activeState = ref.watch(examStateProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -33,6 +72,24 @@ class ExamActiveScreen extends ConsumerWidget {
     final totalQuestions = exam.questions.length;
     final currentIndex = activeState.currentQuestionIndex;
 
+    // Reset question stopwatch if question index changed
+    if (currentIndex != _lastQuestionIndex) {
+      _lastQuestionIndex = currentIndex;
+      _questionSeconds = 0;
+    }
+
+    // Pacing logic: 135 seconds is nominal target in YDS (80 Qs / 180 Min)
+    final pacingProgress = (_questionSeconds / 135.0).clamp(0.0, 1.0);
+    final isOvertime = _questionSeconds > 125;
+    final isWarning = _questionSeconds >= 85 && _questionSeconds <= 125;
+
+    Color pacingColor = AppColors.success;
+    if (isOvertime) {
+      pacingColor = AppColors.error;
+    } else if (isWarning) {
+      pacingColor = const Color(0xFFF59E0B);
+    }
+
     return WillPopScope(
       onWillPop: () async {
         final shouldLeave = await _showExitConfirmation(context);
@@ -42,15 +99,15 @@ class ExamActiveScreen extends ConsumerWidget {
         appBar: AppBar(
           title: Text('Soru ${currentIndex + 1} / $totalQuestions'),
           actions: [
-            // Timer Badge
+            // Overall Exam Countdown Timer Badge
             Container(
               margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: activeState.remainingSeconds < 300
-                    ? AppColors.error.withOpacity(0.15)
-                    : AppColors.primaryLight.withOpacity(0.12),
+                    ? AppColors.error.withValues(alpha: 0.15)
+                    : AppColors.primaryLight.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -88,6 +145,67 @@ class ExamActiveScreen extends ConsumerWidget {
         ),
         body: Column(
           children: [
+            // Soru Başına Akıllı Hız Asistanı (Pacing Meter)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: isDark ? AppColors.surfaceDark : const Color(0xFFF8FAFC),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.speed, size: 15, color: pacingColor),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Soru Süresi: ${_formatQuestionSeconds(_questionSeconds)}',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: pacingColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'ÖSYM Hedefi: ~2:15 dk/soru',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: pacingProgress,
+                      minHeight: 4,
+                      backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
+                      valueColor: AlwaysStoppedAnimation<Color>(pacingColor),
+                    ),
+                  ),
+                  if (isOvertime) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 12, color: AppColors.error),
+                        const SizedBox(width: 4),
+                        const Expanded(
+                          child: Text(
+                            'Zaman Yönetimi: 2 dk aşıldı. Tıkandıysanız işaretleyip sonraya bırakabilirsiniz.',
+                            style: TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -148,7 +266,7 @@ class ExamActiveScreen extends ConsumerWidget {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.primaryLight.withOpacity(0.12)
+                                  ? AppColors.primaryLight.withValues(alpha: 0.12)
                                   : (isDark ? AppColors.cardDark : Colors.white),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
@@ -277,8 +395,8 @@ class ExamActiveScreen extends ConsumerWidget {
                         color: isCurrent
                             ? AppColors.primaryLight
                             : (isAnswered
-                                ? AppColors.success.withOpacity(0.2)
-                                : Colors.grey.withOpacity(0.15)),
+                                ? AppColors.success.withValues(alpha: 0.2)
+                                : Colors.grey.withValues(alpha: 0.15)),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isCurrent

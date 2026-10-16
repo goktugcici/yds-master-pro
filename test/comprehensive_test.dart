@@ -29,6 +29,10 @@ import 'package:yds_pro/views/notes/question_notes_screen.dart';
 import 'package:yds_pro/data/seed_collocations.dart';
 import 'package:yds_pro/views/collocations/collocation_quiz_screen.dart';
 import 'package:yds_pro/views/reading/reading_detail_screen.dart';
+import 'package:yds_pro/data/seed_phrasal_verbs.dart';
+import 'package:yds_pro/views/phrasal_verbs/phrasal_verbs_screen.dart';
+import 'package:yds_pro/views/exam/exam_result_screen.dart';
+import 'package:yds_pro/views/exam/exam_active_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -944,6 +948,147 @@ void main() {
       expect(find.text('Sonraki Soruya Geç'), findsOneWidget);
     });
   });
+
+  group('12. Phrasal Verbs & Exam Pacing Tests', () {
+    late LocalStorage storage;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      storage = await LocalStorage.init();
+    });
+
+    test('defaultPhrasalVerbs contains essential high-frequency YDS phrasal verbs', () {
+      expect(defaultPhrasalVerbs.length, greaterThanOrEqualTo(25));
+      for (final pv in defaultPhrasalVerbs) {
+        expect(pv.id.isNotEmpty, isTrue);
+        expect(pv.verb.isNotEmpty, isTrue);
+        expect(pv.particles.isNotEmpty, isTrue);
+        expect(pv.turkish.isNotEmpty, isTrue);
+        expect(pv.exampleSentence.isNotEmpty, isTrue);
+        expect(pv.exampleTranslation.isNotEmpty, isTrue);
+        expect(pv.osymTrapWarning.isNotEmpty, isTrue);
+      }
+    });
+
+    testWidgets('PhrasalVerbsScreen renders library, filter chips, and interactive quiz',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: PhrasalVerbsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('YDS Phrasal Verbs Atölyesi'), findsOneWidget);
+      expect(find.text('Deyimsel Fiiller'), findsOneWidget);
+      expect(find.text('Phrasal Verb Quizi'), findsOneWidget);
+      expect(find.text('carry out'), findsWidgets);
+
+      // Filter by chip "out"
+      await tester.tap(find.widgetWithText(FilterChip, 'out'));
+      await tester.pumpAndSettle();
+      expect(find.text('carry out'), findsWidgets);
+
+      // Switch to Quiz tab
+      await tester.tap(find.text('Phrasal Verb Quizi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cümledeki boşluğa hangi deyimsel fiil (phrasal verb) gelmelidir?'), findsOneWidget);
+
+      // Answer question by tapping an option
+      final inkWells = find.byType(InkWell);
+      expect(inkWells, findsWidgets);
+      await tester.tap(inkWells.first);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Doğru Kalıp:'), findsOneWidget);
+      expect(find.text('Sonraki Soruya Geç'), findsOneWidget);
+    });
+
+    testWidgets('ExamResultScreen renders score, percentile analysis and mistake review button',
+        (WidgetTester tester) async {
+      final mockResult = ExamResult(
+        id: 'res_1',
+        examId: 'exam_mock',
+        examTitle: 'Örnek YDS Denemesi',
+        totalQuestions: 80,
+        correctCount: 72,
+        wrongCount: 8,
+        emptyCount: 0,
+        score: 90.0,
+        letterGrade: 'A',
+        userAnswers: const {'q1': 0},
+        timeSpentSeconds: 9600,
+        completedAt: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ExamResultScreen(result: mockResult),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('ÖSYM Sınav Sonuç Belgesi'), findsOneWidget);
+      expect(find.text('90.0'), findsOneWidget);
+      expect(find.textContaining('YDS Seviyesi: A'), findsOneWidget);
+      expect(find.text('ÖSYM Tahmini Başarı Sıralaması'), findsOneWidget);
+      expect(find.textContaining('İlk %2\'lik Dilim'), findsOneWidget);
+      expect(find.text('8 Yanlışı Hata Defterinde İncele'), findsOneWidget);
+    });
+
+    testWidgets('ExamActiveScreen renders pacing meter when exam is active',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final container = ProviderContainer(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final exam = Exam(
+        id: 'test_exam',
+        title: 'Deneme Testi',
+        description: 'Test',
+        durationMinutes: 10,
+        questions: defaultSeedQuestions.take(5).toList(),
+      );
+
+      container.read(examStateProvider.notifier).startExam(exam);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ExamActiveScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Soru Süresi: 00:00'), findsOneWidget);
+      expect(find.text('ÖSYM Hedefi: ~2:15 dk/soru'), findsOneWidget);
+      expect(find.text('Soru 1 / 5'), findsOneWidget);
+
+      container.read(examStateProvider.notifier).cancelExam();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+  });
 }
+
 
 

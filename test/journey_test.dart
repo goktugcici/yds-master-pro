@@ -12,6 +12,7 @@ import 'package:yds_pro/views/reading/reading_detail_screen.dart';
 import 'package:yds_pro/views/grammar/grammar_study_screen.dart';
 import 'package:yds_pro/views/collocations/collocation_quiz_screen.dart';
 import 'package:yds_pro/views/notes/question_notes_screen.dart';
+import 'package:yds_pro/views/phrasal_verbs/phrasal_verbs_screen.dart';
 import 'package:yds_pro/views/stats/detailed_stats_screen.dart';
 
 void main() {
@@ -245,6 +246,48 @@ void main() {
       expect(find.text('Tahmini YDS Puanı'), findsOneWidget);
       expect(find.text('Zayıf Halka Tespit Edildi!'), findsOneWidget);
       expect(find.text('Kategori Bazlı Başarı Analizi'), findsOneWidget);
+    });
+
+    testWidgets('Journey 7: Phrasal Verbs Master Drill and Particle Filtering',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: PhrasalVerbsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('YDS Phrasal Verbs Atölyesi'), findsOneWidget);
+      expect(find.text('carry out'), findsWidgets);
+
+      // Filter by particle "off"
+      await tester.tap(find.widgetWithText(FilterChip, 'off'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('call off'), findsWidgets);
+
+      // Switch to Quiz Tab
+      await tester.tap(find.text('Phrasal Verb Quizi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cümledeki boşluğa hangi deyimsel fiil (phrasal verb) gelmelidir?'), findsOneWidget);
+
+      final inkWells = find.byType(InkWell);
+      expect(inkWells, findsWidgets);
+      await tester.tap(inkWells.first);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Doğru Kalıp:'), findsOneWidget);
+      expect(find.text('Sonraki Soruya Geç'), findsOneWidget);
     });
   });
 }

@@ -7,6 +7,7 @@ import '../collocations/collocation_quiz_screen.dart';
 import '../grammar/grammar_study_screen.dart';
 import '../notes/question_notes_screen.dart';
 import '../paywall/paywall_screen.dart';
+import '../phrasal_verbs/phrasal_verbs_screen.dart';
 import '../stats/detailed_stats_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -256,6 +257,37 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const CollocationQuizScreen()),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Phrasal Verbs Atölyesi Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.flash_on_rounded, color: Color(0xFFEA580C)),
+              ),
+              title: const Text('Phrasal Verbs Atölyesi', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('En sık sorulan 70+ deyimsel fiil ve cümle tamamlama quizi', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PhrasalVerbsScreen()),
                 );
               },
             ),

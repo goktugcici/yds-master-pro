@@ -12,6 +12,7 @@ import '../collocations/collocation_quiz_screen.dart';
 import '../grammar/grammar_study_screen.dart';
 import '../mistakes/mistake_notebook_screen.dart';
 import '../notes/question_notes_screen.dart';
+import '../phrasal_verbs/phrasal_verbs_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../reading/reading_hub_screen.dart';
 import '../stats/detailed_stats_screen.dart';
@@ -697,6 +698,38 @@ class HomeScreen extends ConsumerWidget {
                     icon: Icons.auto_awesome,
                     gradient: const [Color(0xFF7C3AED), Color(0xFF5B21B6)],
                     onTap: () => onTabChange(3),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Phrasal Verbs Atölyesi',
+                    subtitle: 'En Çok Çıkan 70+ Fiil & Quiz',
+                    icon: Icons.flash_on_rounded,
+                    gradient: const [Color(0xFFEA580C), Color(0xFFC2410C)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PhrasalVerbsScreen()),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Performans & Puan Radarı',
+                    subtitle: 'Tahmini Skor & Zayıf Halka',
+                    icon: Icons.insights_rounded,
+                    gradient: const [Color(0xFF0284C7), Color(0xFF075985)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const DetailedStatsScreen()),
+                      );
+                    },
                   ),
                 ),
               ],

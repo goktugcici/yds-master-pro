@@ -268,6 +268,12 @@ class ExamNotifier extends StateNotifier<ActiveExamState?> {
 
     return result;
   }
+
+  void cancelExam() {
+    _timer?.cancel();
+    _timer = null;
+    state = null;
+  }
 }
 
 final examStateProvider =
