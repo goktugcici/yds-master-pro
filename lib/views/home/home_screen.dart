@@ -18,6 +18,7 @@ import '../paywall/paywall_screen.dart';
 import '../reading/reading_hub_screen.dart';
 import '../stats/detailed_stats_screen.dart';
 import '../strategies/strategy_guide_screen.dart';
+import '../translation/translation_lab_screen.dart';
 import '../vocabulary/vocab_quiz_screen.dart';
 import '../vocabulary/vocab_match_screen.dart';
 
@@ -752,6 +753,24 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Çeviri Laboratuvarı',
+                    subtitle: 'Öge Analizi (S-V-O) & Sırları',
+                    icon: Icons.architecture_rounded,
+                    gradient: const [Color(0xFF4F46E5), Color(0xFF3730A3)],
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TranslationLabScreen()),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
                 Expanded(
                   child: _buildActionCard(
                     title: 'Tüm Soru Tipleri',

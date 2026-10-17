@@ -15,6 +15,10 @@ import 'package:yds_pro/views/notes/question_notes_screen.dart';
 import 'package:yds_pro/views/phrasal_verbs/phrasal_verbs_screen.dart';
 import 'package:yds_pro/views/cohesion/cohesion_lab_screen.dart';
 import 'package:yds_pro/views/stats/detailed_stats_screen.dart';
+import 'package:yds_pro/views/translation/translation_lab_screen.dart';
+import 'package:yds_pro/models/exam.dart';
+import 'package:yds_pro/providers/exam_provider.dart';
+import 'package:yds_pro/views/exam/exam_active_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -332,6 +336,136 @@ void main() {
 
       expect(find.text('Harika! Doğru Seçim'), findsOneWidget);
       expect(find.text('Sonraki Soru'), findsOneWidget);
+    });
+
+    testWidgets('Journey 9: Translation Matrix Lab and S-V-O Sentence Dissection',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageProvider.overrideWithValue(storage),
+          ],
+          child: const MaterialApp(
+            home: TranslationLabScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify Header and Tabs
+      expect(find.text('Çeviri Laboratuvarı & Öge Analizi'), findsOneWidget);
+      expect(find.text('ÖSYM Çeviri Sırları'), findsOneWidget);
+
+      // 2. Switch to Practice Tab
+      await tester.tap(find.text('Cümle Çözümleme & Pratik'));
+      await tester.pumpAndSettle();
+
+      // 3. Verify Sentence Breakdown (S-V-O)
+      expect(find.textContaining('Orijinal Metin'), findsOneWidget);
+      expect(find.textContaining('Öge Ayrıştırma & Cümle Haritası'), findsOneWidget);
+
+      // 4. Test Dissection Toggle
+      await tester.tap(find.text('Ögeleri Gizle'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ögelerine Ayır'), findsOneWidget);
+
+      await tester.tap(find.text('Ögelerine Ayır'));
+      await tester.pumpAndSettle();
+
+      // 5. Select Option B (Correct for Drill 1) and Submit
+      final optBFinder = find.textContaining('B) Düzenli fiziksel egzersizin');
+      expect(optBFinder, findsOneWidget);
+      await tester.tap(optBFinder);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cevabı Kontrol Et & Analizi İncele'));
+      await tester.pumpAndSettle();
+
+      // 6. Verify Distractor Analysis and Next Question Button
+      expect(find.textContaining('DOĞRU CEVAP'), findsOneWidget);
+      expect(find.textContaining('Sonraki Çeviri Sorusuna Geç'), findsOneWidget);
+    });
+
+    testWidgets('Journey 10: e-YDS Exam Mode with Option Strike-Through and Question Flagging',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final container = ProviderContainer(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+      );
+
+      final testExam = Exam(
+        id: 'exam_journey_eyds',
+        title: 'e-YDS Akıllı Sınav Denemesi',
+        description: 'e-YDS kullanıcı serüveni denemesi',
+        durationMinutes: 20,
+        questions: defaultSeedQuestions.take(5).toList(),
+      );
+
+      container.read(examStateProvider.notifier).startExam(testExam);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ExamActiveScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify e-YDS Toolbar
+      expect(find.text('A+'), findsOneWidget);
+      expect(find.text('A-'), findsOneWidget);
+
+      // 2. Zoom font in and out
+      await tester.tap(find.text('A+'));
+      await tester.pumpAndSettle();
+
+      // 3. Flag Question 1 for review
+      final flagBtn = find.byTooltip('Soruyu Bayrakla (Sonra İncele)');
+      expect(flagBtn, findsOneWidget);
+      await tester.tap(flagBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Bayrağı Kaldır'), findsOneWidget);
+
+      // 4. Strike through option A (Elimination)
+      final strikeButtons = find.byTooltip('Şıkkı Ele (Üstünü Çiz)');
+      expect(strikeButtons, findsWidgets);
+      await tester.tap(strikeButtons.first);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Şıkkı Geri Al'), findsOneWidget);
+
+      // 5. Open Bottom Sheet and verify Question Map and OMR Sheet show the flag
+      await tester.tap(find.text('Soru Haritası'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.flag), findsWidgets);
+
+      // 6. Switch to ÖSYM Optik Form
+      await tester.tap(find.text('ÖSYM Optik Form'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1.'), findsOneWidget);
+      expect(find.byIcon(Icons.flag), findsWidgets);
+
+      // Close modal sheet
+      tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+      await tester.pumpAndSettle();
+
+      container.read(examStateProvider.notifier).cancelExam();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 }

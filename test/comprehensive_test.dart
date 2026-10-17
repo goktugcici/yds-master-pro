@@ -35,6 +35,8 @@ import 'package:yds_pro/views/exam/exam_result_screen.dart';
 import 'package:yds_pro/views/exam/exam_active_screen.dart';
 import 'package:yds_pro/data/seed_cohesion_drills.dart';
 import 'package:yds_pro/views/cohesion/cohesion_lab_screen.dart';
+import 'package:yds_pro/data/seed_translation_drills.dart';
+import 'package:yds_pro/views/translation/translation_lab_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -1212,6 +1214,124 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(container.read(examStateProvider)?.userAnswers[exam.questions.first.id], equals(1));
+
+      // Close modal
+      tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+      await tester.pumpAndSettle();
+
+      container.read(examStateProvider.notifier).cancelExam();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+  });
+
+  group('14. Translation Matrix Lab & e-YDS Exam Tools Tests', () {
+    test('defaultTranslationDrills contains high-yield YDS translation questions and components', () {
+      expect(defaultTranslationDrills.length, greaterThanOrEqualTo(5));
+      for (final drill in defaultTranslationDrills) {
+        expect(drill.originalSentence.isNotEmpty, isTrue);
+        expect(drill.components.isNotEmpty, isTrue);
+        expect(drill.options.length, equals(5));
+        expect(drill.correctIndex, inInclusiveRange(0, 4));
+        expect(drill.goldenRule.isNotEmpty, isTrue);
+        expect(drill.distractorAnalysis.length, equals(5));
+      }
+    });
+
+    testWidgets('TranslationLabScreen renders tactics, toggles dissection, and verifies option check',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: TranslationLabScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify Tactics Tab
+      expect(find.text('ÖSYM Çeviri Sırları'), findsOneWidget);
+      expect(find.text('Cümle Çözümleme & Pratik'), findsOneWidget);
+      expect(find.textContaining('Temel Yüklem & Zaman Uyumu'), findsOneWidget);
+
+      // 2. Switch to Practice Tab
+      await tester.tap(find.text('Cümle Çözümleme & Pratik'));
+      await tester.pumpAndSettle();
+
+      // Verify Sentence and Dissection
+      expect(find.textContaining('Orijinal Metin'), findsOneWidget);
+      expect(find.textContaining('Öge Ayrıştırma'), findsOneWidget);
+
+      // Toggle Dissection Off and On
+      await tester.tap(find.text('Ögeleri Gizle'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ögelerine Ayır'), findsOneWidget);
+
+      await tester.tap(find.text('Ögelerine Ayır'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ögeleri Gizle'), findsOneWidget);
+
+      // Select an option and submit
+      final checkButtonFinder = find.text('Cevabı Kontrol Et & Analizi İncele');
+      expect(checkButtonFinder, findsOneWidget);
+    });
+
+    testWidgets('ExamActiveScreen supports e-YDS font zooming, question flagging, and option strike-through',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final storage = await LocalStorage.init();
+
+      final container = ProviderContainer(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+      );
+
+      final exam = Exam(
+        id: 'exam_eyds_test',
+        title: 'e-YDS Araçları Testi',
+        description: 'e-YDS simülasyon denemesi',
+        durationMinutes: 15,
+        questions: defaultSeedQuestions.take(3).toList(),
+      );
+
+      container.read(examStateProvider.notifier).startExam(exam);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ExamActiveScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Test Font Zoom A+ / A-
+      expect(find.text('A+'), findsOneWidget);
+      expect(find.text('A-'), findsOneWidget);
+      await tester.tap(find.text('A+'));
+      await tester.pumpAndSettle();
+
+      // 2. Test Question Flagging
+      final flagButton = find.byTooltip('Soruyu Bayrakla (Sonra İncele)');
+      expect(flagButton, findsOneWidget);
+      await tester.tap(flagButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Bayrağı Kaldır'), findsOneWidget);
+
+      // 3. Test Option Strike-Through (Elimination)
+      final strikeThroughButtons = find.byTooltip('Şıkkı Ele (Üstünü Çiz)');
+      expect(strikeThroughButtons, findsWidgets);
+      await tester.tap(strikeThroughButtons.first);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Şıkkı Geri Al'), findsOneWidget);
+
+      // 4. Open Soru Haritası to verify flag badge renders
+      await tester.tap(find.text('Soru Haritası'));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.flag), findsWidgets);
 
       // Close modal
       tester.state<NavigatorState>(find.byType(Navigator).last).pop();

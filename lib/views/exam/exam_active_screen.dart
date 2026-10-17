@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/question.dart';
 import '../../providers/exam_provider.dart';
 import 'exam_result_screen.dart';
 
@@ -16,6 +17,9 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
   Timer? _timer;
   int _questionSeconds = 0;
   int _lastQuestionIndex = -1;
+  final Set<String> _flaggedQuestionIds = {};
+  final Set<String> _eliminatedOptions = {}; // "${qId}_$optIdx"
+  double _questionFontSize = 15.0;
 
   @override
   void initState() {
@@ -89,10 +93,14 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
       pacingColor = const Color(0xFFF59E0B);
     }
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         final shouldLeave = await _showExitConfirmation(context);
-        return shouldLeave ?? false;
+        if (shouldLeave == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -212,6 +220,83 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // e-YDS Sınav Araçları Çubuğu: Kategori, Yazı Boyutu (Zoom) & Bayraklama
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            question.category.title,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryLight,
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            // Font Size Controls (A- / A+)
+                            IconButton(
+                              icon: const Text('A-', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              tooltip: 'Yazı Boyutunu Küçült',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              onPressed: () {
+                                if (_questionFontSize > 13.0) {
+                                  setState(() => _questionFontSize -= 1.0);
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Text('A+', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              tooltip: 'Yazı Boyutunu Büyüt',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              onPressed: () {
+                                if (_questionFontSize < 20.0) {
+                                  setState(() => _questionFontSize += 1.0);
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 4),
+                            // Flag / Review Later Toggle
+                            IconButton(
+                              icon: Icon(
+                                _flaggedQuestionIds.contains(question.id)
+                                    ? Icons.flag
+                                    : Icons.flag_outlined,
+                                color: _flaggedQuestionIds.contains(question.id)
+                                    ? const Color(0xFFF59E0B)
+                                    : Colors.grey,
+                                size: 20,
+                              ),
+                              tooltip: _flaggedQuestionIds.contains(question.id)
+                                  ? 'Bayrağı Kaldır'
+                                  : 'Soruyu Bayrakla (Sonra İncele)',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              onPressed: () {
+                                setState(() {
+                                  if (_flaggedQuestionIds.contains(question.id)) {
+                                    _flaggedQuestionIds.remove(question.id);
+                                  } else {
+                                    _flaggedQuestionIds.add(question.id);
+                                  }
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
                     // Reading passage if present
                     if (question.passage != null) ...[
                       Container(
@@ -225,7 +310,7 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                         ),
                         child: Text(
                           question.passage!,
-                          style: const TextStyle(fontSize: 13.5, height: 1.5),
+                          style: TextStyle(fontSize: _questionFontSize - 1.0, height: 1.5),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -234,8 +319,8 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                     // Question prompt
                     Text(
                       question.questionText,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: _questionFontSize,
                         fontWeight: FontWeight.w600,
                         height: 1.45,
                       ),
@@ -243,64 +328,120 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Options A, B, C, D, E
+                    // Options A, B, C, D, E with e-YDS Elimination (Strike-Through)
                     ...List.generate(question.options.length, (optIndex) {
                       final optionText = question.options[optIndex];
                       final isSelected =
                           activeState.currentSelectedAnswer == optIndex;
+                      final eliminationKey = '${question.id}_$optIndex';
+                      final isEliminated = _eliminatedOptions.contains(eliminationKey);
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         child: InkWell(
                           onTap: () {
+                            if (isEliminated) {
+                              setState(() {
+                                _eliminatedOptions.remove(eliminationKey);
+                              });
+                            }
                             ref
                                 .read(examStateProvider.notifier)
                                 .selectAnswer(question.id, optIndex);
                           },
+                          onLongPress: () {
+                            setState(() {
+                              if (isEliminated) {
+                                _eliminatedOptions.remove(eliminationKey);
+                              } else {
+                                _eliminatedOptions.add(eliminationKey);
+                              }
+                            });
+                          },
                           borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primaryLight.withValues(alpha: 0.12)
-                                  : (isDark ? AppColors.cardDark : Colors.white),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryLight
-                                    : (isDark
-                                        ? AppColors.borderDark
-                                        : AppColors.borderLight),
-                                width: isSelected ? 1.5 : 1,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: isEliminated ? 0.45 : 1.0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  isSelected
-                                      ? Icons.radio_button_checked
-                                      : Icons.radio_button_unchecked,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primaryLight.withValues(alpha: 0.12)
+                                    : (isEliminated
+                                        ? Colors.grey.withValues(alpha: 0.1)
+                                        : (isDark ? AppColors.cardDark : Colors.white)),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
                                   color: isSelected
                                       ? AppColors.primaryLight
-                                      : Colors.grey,
-                                  size: 20,
+                                      : (isEliminated
+                                          ? Colors.red.withValues(alpha: 0.3)
+                                          : (isDark
+                                              ? AppColors.borderDark
+                                              : AppColors.borderLight)),
+                                  width: isSelected ? 1.5 : 1,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    optionText,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isSelected
+                                        ? Icons.radio_button_checked
+                                        : Icons.radio_button_unchecked,
+                                    color: isSelected
+                                        ? AppColors.primaryLight
+                                        : Colors.grey,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      optionText,
+                                      style: TextStyle(
+                                        fontSize: _questionFontSize - 1.0,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        decoration: isEliminated
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                        decorationThickness: 2,
+                                        decorationColor: Colors.redAccent,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  // Strike-through button (e-YDS Elimination)
+                                  IconButton(
+                                    icon: Icon(
+                                      isEliminated
+                                          ? Icons.undo
+                                          : Icons.strikethrough_s,
+                                      size: 18,
+                                      color: isEliminated
+                                          ? const Color(0xFFF59E0B)
+                                          : Colors.grey.shade400,
+                                    ),
+                                    tooltip: isEliminated
+                                        ? 'Şıkkı Geri Al'
+                                        : 'Şıkkı Ele (Üstünü Çiz)',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                        minWidth: 28, minHeight: 28),
+                                    onPressed: () {
+                                      setState(() {
+                                        if (isEliminated) {
+                                          _eliminatedOptions.remove(eliminationKey);
+                                        } else {
+                                          _eliminatedOptions.add(eliminationKey);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -449,18 +590,35 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                                           : Colors.grey.withValues(alpha: 0.15)),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: isCurrent
-                                        ? AppColors.primary
-                                        : (isAnswered ? AppColors.success : Colors.grey),
-                                    width: isCurrent ? 2 : 1,
+                                    color: _flaggedQuestionIds.contains(q.id)
+                                        ? const Color(0xFFF59E0B)
+                                        : (isCurrent
+                                            ? AppColors.primary
+                                            : (isAnswered ? AppColors.success : Colors.grey)),
+                                    width: (_flaggedQuestionIds.contains(q.id) || isCurrent) ? 2 : 1,
                                   ),
                                 ),
-                                child: Text(
-                                  '${idx + 1}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: isCurrent ? Colors.white : null,
-                                  ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Text(
+                                      '${idx + 1}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isCurrent ? Colors.white : null,
+                                      ),
+                                    ),
+                                    if (_flaggedQuestionIds.contains(q.id))
+                                      const Positioned(
+                                        top: 2,
+                                        right: 2,
+                                        child: Icon(
+                                          Icons.flag,
+                                          size: 11,
+                                          color: Color(0xFFF59E0B),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             );
@@ -501,8 +659,8 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                                   },
                                   borderRadius: BorderRadius.circular(6),
                                   child: Container(
-                                    width: 38,
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    width: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
                                       color: isCurrent
@@ -510,13 +668,23 @@ class _ExamActiveScreenState extends ConsumerState<ExamActiveScreen> {
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Text(
-                                      '${idx + 1}.',
-                                      style: TextStyle(
-                                        fontWeight: isCurrent ? FontWeight.w900 : FontWeight.bold,
-                                        fontSize: 13.5,
-                                        color: isCurrent ? AppColors.primaryLight : null,
-                                      ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '${idx + 1}.',
+                                          style: TextStyle(
+                                            fontWeight: isCurrent ? FontWeight.w900 : FontWeight.bold,
+                                            fontSize: 13,
+                                            color: isCurrent ? AppColors.primaryLight : null,
+                                          ),
+                                        ),
+                                        if (_flaggedQuestionIds.contains(q.id)) ...[
+                                          const SizedBox(width: 2),
+                                          const Icon(Icons.flag, size: 11, color: Color(0xFFF59E0B)),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                 ),

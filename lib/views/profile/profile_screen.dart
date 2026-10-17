@@ -10,6 +10,7 @@ import '../notes/question_notes_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../phrasal_verbs/phrasal_verbs_screen.dart';
 import '../stats/detailed_stats_screen.dart';
+import '../translation/translation_lab_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -320,6 +321,37 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const CohesionLabScreen()),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Çeviri Laboratuvarı Tile
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.architecture_rounded, color: Color(0xFF4F46E5)),
+              ),
+              title: const Text('Çeviri Laboratuvarı (S-V-O Matrix)', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Özne-yüklem eşleşmesi, zaman kuralları ve ÖSYM çeviri taktikleri', style: TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TranslationLabScreen()),
                 );
               },
             ),
